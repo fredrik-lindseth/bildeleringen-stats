@@ -1,4 +1,4 @@
-import { currentMonthStats, monthlyCosts, filterValid } from "../lib/stats.js";
+import { currentMonthStats, monthlyCosts, usagePatterns } from "../lib/stats.js";
 import { createSparkline } from "../lib/chart-helpers.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
@@ -36,6 +36,9 @@ const syncBtn = document.getElementById("sync-btn");
 const lastSyncedEl = document.getElementById("last-synced");
 const dashboardLink = document.getElementById("dashboard-link");
 
+// Track chart instance to avoid leaks on re-render
+let sparklineChart = null;
+
 function showStatus(message) {
   statusEl.textContent = message;
   statusEl.hidden = false;
@@ -68,19 +71,18 @@ function renderStats(reservations) {
     : "–";
 
   // Most used car (across all data)
-  const valid = filterValid(reservations);
-  const carCounts = {};
-  for (const r of valid) {
-    const car = r.vehicleName || r.vehicleId || "Ukjent";
-    carCounts[car] = (carCounts[car] || 0) + 1;
-  }
-  const topCar = Object.entries(carCounts).sort(([, a], [, b]) => b - a)[0];
-  mostUsedCar.textContent = topCar ? topCar[0] : "–";
+  const patterns = usagePatterns(reservations);
+  const topCar = patterns.topCars[0];
+  mostUsedCar.textContent = topCar ? topCar.name : "–";
 
-  // Sparkline: last 6 months
+  // Sparkline: last 6 months (destroy previous instance to avoid leak)
+  if (sparklineChart) {
+    sparklineChart.destroy();
+    sparklineChart = null;
+  }
   const last6 = monthly.slice(-6);
   if (last6.length > 1) {
-    createSparkline(
+    sparklineChart = createSparkline(
       sparklineCanvas,
       last6.map((m) => m.total)
     );
