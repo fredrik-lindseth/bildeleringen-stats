@@ -1,27 +1,8 @@
 import { currentMonthStats, monthlyCosts, usagePatterns } from "../lib/stats.js";
 import { createSparkline } from "../lib/chart-helpers.js";
+import { formatNOK, formatSyncTime } from "../lib/formatters.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
-
-// Norwegian currency formatter
-const formatNOK = new Intl.NumberFormat("nb-NO", {
-  style: "currency",
-  currency: "NOK",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
-
-// Norwegian relative date/time formatter
-function formatSyncTime(timestamp) {
-  if (!timestamp) return "";
-  const date = new Date(timestamp);
-  return `Sist synkronisert: ${date.toLocaleString("nb-NO", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
-}
 
 // DOM references
 const statusEl = document.getElementById("status");
@@ -187,8 +168,7 @@ syncBtn.addEventListener("click", async () => {
 });
 
 // Dashboard link — open in new tab
-dashboardLink.addEventListener("click", (e) => {
-  e.preventDefault();
+dashboardLink.addEventListener("click", () => {
   browserAPI.tabs.create({
     url: browserAPI.runtime.getURL("dashboard/dashboard.html"),
   });

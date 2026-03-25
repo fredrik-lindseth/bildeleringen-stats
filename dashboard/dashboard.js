@@ -12,6 +12,8 @@ import {
   createLineChart,
 } from "../lib/chart-helpers.js";
 
+import { formatNOK, formatSyncTime } from "../lib/formatters.js";
+
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
 // ---------- CSS Color Helpers ----------
@@ -48,13 +50,6 @@ function colorWithAlpha(cssColor, alpha) {
 
 // ---------- Formatters ----------
 
-const formatNOK = new Intl.NumberFormat("nb-NO", {
-  style: "currency",
-  currency: "NOK",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
-
 const formatKm = new Intl.NumberFormat("nb-NO", {
   maximumFractionDigits: 0,
 });
@@ -82,17 +77,6 @@ function formatDuration(hours) {
   if (h === 0) return `${m} min`;
   if (m === 0) return `${h} t`;
   return `${h} t ${m} min`;
-}
-
-function formatSyncTime(timestamp) {
-  if (!timestamp) return "";
-  const date = new Date(timestamp);
-  return `Sist synkronisert: ${date.toLocaleString("nb-NO", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
 }
 
 // ---------- DOM Helpers ----------
@@ -220,7 +204,7 @@ function buildYearSelector(reservations) {
   const allBtn = document.createElement("button");
   allBtn.className = "year-btn year-btn--active";
   allBtn.dataset.year = "all";
-  allBtn.textContent = "Alle";
+  allBtn.textContent = "Alle år";
   container.appendChild(allBtn);
 
   for (const year of sorted) {
