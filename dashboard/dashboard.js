@@ -278,7 +278,8 @@ function renderCosts(reservations) {
       $("monthly-cost-chart"),
       labels,
       data,
-      "Kostnad (kr)"
+      "Kostnad",
+      { yTitle: "Kr" }
     );
   }
 }
@@ -305,7 +306,8 @@ function renderUsage(reservations) {
       $("trips-per-month-chart"),
       labels,
       data,
-      "Turer"
+      "Turer",
+      { yTitle: "Antall" }
     );
   }
 
@@ -438,7 +440,8 @@ function renderMileage(reservations) {
       $("monthly-km-chart"),
       labels,
       data,
-      "Kilometer"
+      "Distanse",
+      { yTitle: "Km" }
     );
   }
 
@@ -539,7 +542,8 @@ function renderYearOverYear(reservations, yearly) {
       responsive: true,
       plugins: { legend: { display: true, position: "top" } },
       scales: {
-        y: { beginAtZero: true },
+        x: { ticks: { maxTicksLimit: 12, font: { size: 11 } } },
+        y: { beginAtZero: true, title: { display: true, text: "Kr", font: { size: 12 } } },
       },
     },
   });
@@ -560,7 +564,7 @@ function renderRollingAverage(monthly) {
     data.push(Math.round(avg));
   }
 
-  charts.rollingAvg = createLineChart(canvas, labels, data, "3-mnd. snitt (kr)");
+  charts.rollingAvg = createLineChart(canvas, labels, data, "3-mnd. snitt", { yTitle: "Kr" });
 }
 
 function renderSeasonalComparison(reservations, yearly) {
@@ -585,7 +589,8 @@ function renderSeasonalComparison(reservations, yearly) {
     canvas,
     MONTH_NAMES_FULL,
     avgPerMonth,
-    "Gjennomsnittlig månedskostnad (kr)"
+    "Snitt månedskostnad",
+    { yTitle: "Kr" }
   );
 }
 
