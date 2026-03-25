@@ -14,6 +14,8 @@ import {
 
 import { formatNOK, formatSyncTime } from "../lib/formatters.js";
 
+import { estimateOwnershipCost } from "../lib/ownership-cost.js";
+
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
 // ---------- CSS Color Helpers ----------
@@ -594,6 +596,105 @@ function renderSeasonalComparison(reservations, yearly) {
   );
 }
 
+// ---------- Rendering: Section 5 — Bilregnestykket ----------
+
+function renderOwnership(reservations) {
+  const result = estimateOwnershipCost(reservations);
+
+  if (!result) {
+    $("ownership-empty").hidden = false;
+    $("ownership-content").hidden = true;
+    return;
+  }
+
+  $("ownership-empty").hidden = true;
+  $("ownership-content").hidden = false;
+
+  // Set cost amounts
+  setText("sharing-cost", formatNOK.format(result.sharingCost));
+  setText("ownership-cost", formatNOK.format(result.ownershipCost));
+
+  // Build verdict
+  const verdictEl = $("comparison-verdict");
+  if (result.savings > 0) {
+    verdictEl.textContent = `Du sparer ${formatNOK.format(result.savings)} per år med bildeling`;
+    verdictEl.className = "comparison__verdict comparison__verdict--saving";
+  } else {
+    verdictEl.textContent = `Bildeling koster ${formatNOK.format(Math.abs(result.savings))} mer per år`;
+    verdictEl.className = "comparison__verdict comparison__verdict--more";
+  }
+
+  // Ownership breakdown horizontal bar chart
+  destroyChart("ownershipBreakdown");
+  const bd = result.breakdownOwnership;
+  const breakdownLabels = [
+    "Verditap",
+    "Forsikring",
+    "Årsavgift",
+    "Vedlikehold",
+    "Parkering",
+    "Drivstoff",
+  ];
+  const breakdownData = [
+    bd.depreciation,
+    bd.insurance,
+    bd.tax,
+    bd.maintenance,
+    bd.parking,
+    bd.fuel,
+  ];
+  const breakdownColors = [
+    cssVar("--color-chart-1"),
+    cssVar("--color-chart-2"),
+    cssVar("--color-chart-3"),
+    cssVar("--color-chart-4"),
+    cssVar("--color-chart-5"),
+    cssVar("--color-tertiary"),
+  ];
+
+  charts.ownershipBreakdown = new Chart($("ownership-breakdown-chart"), {
+    type: "bar",
+    data: {
+      labels: breakdownLabels,
+      datasets: [{
+        label: "Kostnad",
+        data: breakdownData,
+        backgroundColor: breakdownColors,
+      }],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const val = new Intl.NumberFormat("nb-NO").format(ctx.parsed.x);
+              return `${val} kr`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: "Kr", font: { size: 12 } },
+        },
+        y: {
+          ticks: { font: { size: 12 } },
+        },
+      },
+    },
+  });
+
+  // Note text
+  const categoryName = result.category || "ukjent";
+  const noteEl = $("comparison-note");
+  noteEl.textContent =
+    `Estimat basert på din mest brukte bilkategori (${categoryName}). ` +
+    `Eierkostnader inkluderer verditap, forsikring, årsavgift, vedlikehold og parkering.`;
+}
+
 // ---------- Utility ----------
 
 function escapeHtml(str) {
@@ -663,6 +764,7 @@ async function init() {
   renderUsage(allReservations);
   renderMileage(allReservations);
   renderTrends(allReservations);
+  renderOwnership(allReservations);
 
   showMain();
 }
@@ -682,6 +784,7 @@ syncBtn.addEventListener("click", async () => {
     renderUsage(allReservations);
     renderMileage(allReservations);
     renderTrends(allReservations);
+    renderOwnership(allReservations);
 
     showMain();
   } else {

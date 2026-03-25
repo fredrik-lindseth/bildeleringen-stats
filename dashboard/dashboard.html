@@ -30,6 +30,7 @@
       <a class="nav__link" href="#bruksmonster" data-section="bruksmonster">Bruksm&oslash;nster</a>
       <a class="nav__link" href="#kilometer" data-section="kilometer">Kilometer</a>
       <a class="nav__link" href="#trender" data-section="trender">Trender</a>
+      <a class="nav__link" href="#bilregnestyket" data-section="bilregnestyket">Bilregnestykket</a>
     </div>
   </nav>
 
@@ -190,6 +191,40 @@
           <h3 class="chart-container__title">Sesongsammenligning</h3>
           <canvas id="seasonal-chart"></canvas>
         </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Bilregnestykket -->
+    <section class="section" id="bilregnestyket">
+      <h2 class="section__title">Bilregnestykket</h2>
+
+      <div id="ownership-empty" class="empty-state empty-state--inline" hidden>
+        <p class="empty-state__text">Ikke nok data for sammenligning.</p>
+      </div>
+
+      <div id="ownership-content" hidden>
+        <div class="comparison">
+          <div class="comparison__column">
+            <span class="comparison__label">Bildeling</span>
+            <span class="comparison__amount" id="sharing-cost">&ndash;</span>
+            <span class="comparison__period">per &aring;r</span>
+          </div>
+          <div class="comparison__vs">vs</div>
+          <div class="comparison__column">
+            <span class="comparison__label">Eid bil</span>
+            <span class="comparison__amount" id="ownership-cost">&ndash;</span>
+            <span class="comparison__period">per &aring;r</span>
+          </div>
+        </div>
+
+        <div class="comparison__verdict" id="comparison-verdict"></div>
+
+        <div class="chart-container">
+          <h3 class="chart-container__title">Kostnadsfordeling &mdash; eid bil</h3>
+          <canvas id="ownership-breakdown-chart"></canvas>
+        </div>
+
+        <p class="comparison__note" id="comparison-note"></p>
       </div>
     </section>
   </main>

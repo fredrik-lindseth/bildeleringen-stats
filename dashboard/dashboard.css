@@ -46,6 +46,9 @@
   --color-chart-4: #b274d2;
   --color-chart-5: #dbb94e;
 
+  --color-saving-bg: rgba(76, 175, 124, 0.1);
+  --color-warning-bg: rgba(232, 121, 73, 0.1);
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -105,6 +108,9 @@
     --color-chart-3: #6fd092;
     --color-chart-4: #c490e0;
     --color-chart-5: #e5c95e;
+
+    --color-saving-bg: rgba(111, 208, 146, 0.1);
+    --color-warning-bg: rgba(240, 147, 95, 0.1);
 
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--color-border);
     --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--color-border);
@@ -553,6 +559,80 @@ body {
   font-style: italic;
 }
 
+/* ---- Comparison ---- */
+.comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 32px 24px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.comparison__column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  max-width: 300px;
+}
+
+.comparison__label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.comparison__amount {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.comparison__period {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.comparison__vs {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+}
+
+.comparison__verdict {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.comparison__verdict--saving {
+  color: var(--color-tertiary);
+  background-color: var(--color-saving-bg);
+}
+
+.comparison__verdict--more {
+  color: var(--color-secondary);
+  background-color: var(--color-warning-bg);
+}
+
+.comparison__note {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin-top: 16px;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .header__inner {
@@ -606,6 +686,14 @@ body {
   .nav__link {
     padding: 10px 14px;
     font-size: 13px;
+  }
+
+  .comparison {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .comparison__vs {
+    transform: rotate(90deg);
   }
 }
 
