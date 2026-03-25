@@ -27,7 +27,7 @@ import {
 
 import { storage } from "../lib/browser-polyfill.js";
 
-import { totalCO2, monthlyCO2, co2Comparison } from "../lib/co2.js";
+import { totalCO2, monthlyCO2 } from "../lib/co2.js";
 
 import {
   TRANSPORT_MODES,
@@ -846,7 +846,6 @@ async function renderCategories(reservations) {
 
 function renderClimate(reservations) {
   const total = totalCO2(reservations);
-  const comparison = co2Comparison(reservations);
   const monthly = monthlyCO2(reservations);
 
   if (!total) {
