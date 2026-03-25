@@ -524,7 +524,7 @@ function renderYearOverYear(reservations, yearly) {
 
     const byMonth = Array(12).fill(0);
     for (const r of yearData) {
-      byMonth[new Date(r.start).getMonth()] += r.totalPrice;
+      byMonth[new Date(r.start).getMonth()] += r.price.total;
     }
 
     const color = colors[i % colors.length];
@@ -582,7 +582,7 @@ function renderSeasonalComparison(reservations, yearly) {
 
   for (const r of valid) {
     const d = new Date(r.start);
-    monthTotals[d.getMonth()] += r.totalPrice;
+    monthTotals[d.getMonth()] += r.price.total;
     monthCounts[d.getMonth()]++;
   }
 
