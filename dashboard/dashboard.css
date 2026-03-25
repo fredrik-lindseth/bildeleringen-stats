@@ -37,6 +37,12 @@
   --color-rank-text: #4a90d9;
   --color-section-divider: #e2e5ea;
 
+  --color-chart-1: #4a90d9;
+  --color-chart-2: #e87949;
+  --color-chart-3: #64bd83;
+  --color-chart-4: #b274d2;
+  --color-chart-5: #dbb94e;
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -83,6 +89,12 @@
     --color-rank-bg: rgba(90, 157, 230, 0.1);
     --color-rank-text: #5a9de6;
     --color-section-divider: #2a2e36;
+
+    --color-chart-1: #5a9de6;
+    --color-chart-2: #f0935f;
+    --color-chart-3: #6fd092;
+    --color-chart-4: #c490e0;
+    --color-chart-5: #e5c95e;
 
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--color-border);
     --shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.3);

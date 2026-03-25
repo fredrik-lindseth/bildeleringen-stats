@@ -14,6 +14,38 @@ import {
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
+// ---------- CSS Color Helpers ----------
+
+/**
+ * Read a CSS custom property value from :root.
+ */
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/**
+ * Convert any CSS color string to rgba() with a given alpha.
+ * Uses a scratch canvas to let the browser parse the color.
+ */
+const _colorCtx = document.createElement("canvas").getContext("2d");
+function colorWithAlpha(cssColor, alpha) {
+  _colorCtx.fillStyle = cssColor;
+  // The browser normalises any color to rgb()/rgba() in fillStyle
+  const parsed = _colorCtx.fillStyle;
+  if (parsed.startsWith("#")) {
+    // Short hex — convert manually
+    const r = parseInt(parsed.slice(1, 3), 16);
+    const g = parseInt(parsed.slice(3, 5), 16);
+    const b = parseInt(parsed.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  // Already rgb(...) or rgba(...)
+  return parsed.replace(/rgba?\(([^)]+)\)/, (_, inner) => {
+    const parts = inner.split(",").map((s) => s.trim());
+    return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
+  });
+}
+
 // ---------- Formatters ----------
 
 const formatNOK = new Intl.NumberFormat("nb-NO", {
@@ -342,11 +374,7 @@ function renderHeatmapWithLabels(canvas, heatmapData) {
   const styles = getComputedStyle(document.documentElement);
   const emptyColor = styles.getPropertyValue("--color-heatmap-empty").trim();
   const textColor = styles.getPropertyValue("--color-heatmap-text").trim();
-  // Check if we're in dark mode
-  const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const aR = isDark ? 90 : 74;
-  const aG = isDark ? 157 : 144;
-  const aB = isDark ? 230 : 217;
+  const heatmapFill = styles.getPropertyValue("--color-heatmap-fill").trim();
 
   // Hour labels
   ctx.font = "11px " + getComputedStyle(document.body).fontFamily;
@@ -377,11 +405,16 @@ function renderHeatmapWithLabels(canvas, heatmapData) {
       if (intensity === 0) {
         ctx.fillStyle = emptyColor;
       } else {
-        ctx.fillStyle = `rgba(${aR}, ${aG}, ${aB}, ${0.15 + intensity * 0.85})`;
+        ctx.fillStyle = colorWithAlpha(heatmapFill, 0.15 + intensity * 0.85);
       }
-      ctx.beginPath();
-      ctx.roundRect(x, y, cellW - 2, cellH - 2, 3);
-      ctx.fill();
+      // Use roundRect if available, fallback to fillRect for older browsers
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, cellW - 2, cellH - 2, 3);
+        ctx.fill();
+      } else {
+        ctx.fillRect(x, y, cellW - 2, cellH - 2);
+      }
     }
   }
 }
@@ -478,13 +511,10 @@ function renderYearOverYear(reservations, yearly) {
 
   // Build datasets per year, indexed by month 0-11
   const datasets = [];
-  const colors = [
-    { border: "rgba(74, 144, 217, 1)", bg: "rgba(74, 144, 217, 0.1)" },
-    { border: "rgba(232, 121, 73, 1)", bg: "rgba(232, 121, 73, 0.1)" },
-    { border: "rgba(100, 189, 131, 1)", bg: "rgba(100, 189, 131, 0.1)" },
-    { border: "rgba(178, 116, 210, 1)", bg: "rgba(178, 116, 210, 0.1)" },
-    { border: "rgba(219, 185, 78, 1)", bg: "rgba(219, 185, 78, 0.1)" },
-  ];
+  const colors = [1, 2, 3, 4, 5].map((n) => {
+    const c = cssVar(`--color-chart-${n}`);
+    return { border: c, bg: colorWithAlpha(c, 0.1) };
+  });
 
   for (let i = 0; i < yearly.length; i++) {
     const year = yearly[i].year;
