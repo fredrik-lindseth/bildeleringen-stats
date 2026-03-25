@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bildeleringen Stats — Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header__inner">
+      <h1 class="header__title">Bildeleringen Stats</h1>
+      <div class="header__actions">
+        <span id="last-synced" class="header__sync-time"></span>
+        <button id="sync-btn" class="btn btn--sync" type="button">
+          <svg class="btn__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 1v5h5"/>
+            <path d="M15 15v-5h-5"/>
+            <path d="M2.3 10a6 6 0 0 0 10.3 2.2L15 10M1 6l2.4-2.2A6 6 0 0 1 13.7 6"/>
+          </svg>
+          Synkroniser
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="nav__link nav__link--active" href="#kostnader" data-section="kostnader">Kostnader</a>
+      <a class="nav__link" href="#bruksmonster" data-section="bruksmonster">Bruksm&oslash;nster</a>
+      <a class="nav__link" href="#kilometer" data-section="kilometer">Kilometer</a>
+      <a class="nav__link" href="#trender" data-section="trender">Trender</a>
+    </div>
+  </nav>
+
+  <!-- Loading / status -->
+  <div id="status" class="status" hidden>
+    <span id="status-text">Laster data...</span>
+    <div id="progress-bar" class="progress" hidden>
+      <div class="progress__bar" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="empty-state" class="empty-state" hidden>
+    <p class="empty-state__text">Ingen data tilgjengelig enda.</p>
+    <p class="empty-state__sub">Trykk Synkroniser for &aring; hente data, eller logg inn p&aring; <a href="https://app.dele.no" target="_blank" rel="noopener">app.dele.no</a> f&oslash;rst.</p>
+  </div>
+
+  <main id="main-content" class="main" hidden>
+    <!-- Section 1: Kostnader -->
+    <section class="section" id="kostnader">
+      <h2 class="section__title">Kostnader</h2>
+
+      <div class="year-selector" id="cost-year-selector">
+        <button class="year-btn year-btn--active" data-year="all">Alle</button>
+      </div>
+
+      <div class="chart-container">
+        <h3 class="chart-container__title">M&aring;nedlige kostnader</h3>
+        <canvas id="monthly-cost-chart"></canvas>
+      </div>
+
+      <div class="cards cards--3">
+        <div class="card">
+          <span class="card__label">Totalt per &aring;r</span>
+          <span class="card__value" id="cost-yearly-total">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Gjennomsnitt per tur</span>
+          <span class="card__value" id="cost-avg-trip">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Median per tur</span>
+          <span class="card__value" id="cost-median-trip">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Dyrest tur</span>
+          <span class="card__value" id="cost-max-trip">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Billigst tur</span>
+          <span class="card__value" id="cost-min-trip">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Kostnad per km</span>
+          <span class="card__value" id="cost-per-km">&ndash;</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Bruksmønster -->
+    <section class="section" id="bruksmonster">
+      <h2 class="section__title">Bruksm&oslash;nster</h2>
+
+      <div class="chart-container">
+        <h3 class="chart-container__title">Ukedag &times; tidspunkt</h3>
+        <div class="heatmap-wrapper">
+          <canvas id="heatmap-chart" width="720" height="210"></canvas>
+        </div>
+        <div class="heatmap-legend">
+          <span class="heatmap-legend__label">F&aelig;rre turer</span>
+          <div class="heatmap-legend__scale"></div>
+          <span class="heatmap-legend__label">Flere turer</span>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <h3 class="chart-container__title">Turer per m&aring;ned</h3>
+        <canvas id="trips-per-month-chart"></canvas>
+      </div>
+
+      <div class="cards cards--2">
+        <div class="card">
+          <span class="card__label">Gjennomsnittlig varighet</span>
+          <span class="card__value" id="usage-avg-duration">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Antall turer totalt</span>
+          <span class="card__value" id="usage-total-trips">&ndash;</span>
+        </div>
+      </div>
+
+      <div class="card card--list">
+        <span class="card__label">Mest brukte biler</span>
+        <ol class="ranked-list" id="top-cars-list">
+          <li class="ranked-list__empty">Ingen data</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Section 3: Kilometer -->
+    <section class="section" id="kilometer">
+      <h2 class="section__title">Kilometer</h2>
+
+      <div id="km-empty" class="empty-state empty-state--inline" hidden>
+        <p class="empty-state__text">Ingen kilometerdata tilgjengelig.</p>
+      </div>
+
+      <div id="km-content">
+        <div class="chart-container">
+          <h3 class="chart-container__title">M&aring;nedlig distanse</h3>
+          <canvas id="monthly-km-chart"></canvas>
+        </div>
+
+        <div class="cards cards--3">
+          <div class="card">
+            <span class="card__label">Totalt kj&oslash;rt</span>
+            <span class="card__value" id="km-total">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Snitt per tur</span>
+            <span class="card__value" id="km-avg">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Lengste tur</span>
+            <span class="card__value" id="km-max">&ndash;</span>
+          </div>
+        </div>
+
+        <div class="card card--list">
+          <span class="card__label">Kilometer per bil (topp 5)</span>
+          <ol class="ranked-list" id="km-by-car-list">
+            <li class="ranked-list__empty">Ingen data</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Trender -->
+    <section class="section" id="trender">
+      <h2 class="section__title">Trender</h2>
+
+      <div id="trends-empty" class="empty-state empty-state--inline" hidden>
+        <p class="empty-state__text">Ikke nok data for trendanalyse.</p>
+      </div>
+
+      <div id="trends-content">
+        <div class="chart-container">
+          <h3 class="chart-container__title">&Aring;r-over-&aring;r sammenligning</h3>
+          <canvas id="yoy-chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h3 class="chart-container__title">Rullerende 3-m&aring;neders snitt</h3>
+          <canvas id="rolling-avg-chart"></canvas>
+        </div>
+
+        <div class="chart-container" id="seasonal-container" hidden>
+          <h3 class="chart-container__title">Sesongsammenligning</h3>
+          <canvas id="seasonal-chart"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../vendor/chart.min.js"></script>
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>
