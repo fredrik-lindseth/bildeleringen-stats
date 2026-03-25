@@ -1,0 +1,6 @@
+*.zip
+*.xpi
+*.crx
+web-ext-artifacts/
+node_modules/
+.DS_Store
