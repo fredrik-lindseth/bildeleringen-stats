@@ -8,9 +8,14 @@ Nettleserutvidelse som gir deg statistikk og analyse av ditt bildeleforbruk på 
 
 ## Funksjoner
 
-- Oversikt over kjøreturer, kostnader og forbruk
-- Statistikk per bil, måned og år
-- All data lagres lokalt i nettleseren din
+- **Popup:** Rask oversikt over forbruk denne og forrige måned, antall turer, snittkostnad og mest brukte bil
+- **Dashboard:** Fullstendig statistikk med fire seksjoner:
+  - **Kostnader** — måned-over-måned, årlig totalforbruk, snitt/median per tur, dyreste/billigste tur, kostnad per km
+  - **Bruksmønster** — heatmap (ukedag × tid), turer per måned, gjennomsnittlig varighet, mest brukte biler
+  - **Kilometer** — total distanse, snitt per tur, lengste tur, km per bil
+  - **Trender** — år-over-år sammenligning, rullerende 3-måneders snitt, sesongmønster
+- Inkrementell synkronisering — henter kun nye turer etter første innlasting
+- All data lagres lokalt i nettleseren, ingen eksterne servere
 
 ## Installasjon
 
@@ -29,13 +34,33 @@ Nettleserutvidelse som gir deg statistikk og analyse av ditt bildeleforbruk på 
 4. Klikk «Last inn upakket»
 5. Velg prosjektmappen
 
+### Forutsetninger
+
+Du må være innlogget på [app.dele.no](https://app.dele.no) i samme nettleser. Utvidelsen leser innloggingen din derfra.
+
 ## Hvordan det fungerer
 
-Utvidelsen leser autentiserings-token fra din aktive innlogging på dele.no og bruker dette til å hente statistikkdata fra dele.no sitt API. All databehandling skjer lokalt i nettleseren.
+1. **Content script** kjører på `app.dele.no` og leser autentiserings-token fra din aktive innlogging
+2. **Bakgrunnsskript** henter reservasjonshistorikk fra dele.no sitt API og cacher alt lokalt
+3. **Popup** viser en rask oversikt når du klikker på utvidelsesikonet
+4. **Dashboard** åpnes fra popup og viser fullstendig statistikk med grafer
+
+Cachen oppdateres automatisk maks én gang per time. Du kan også synkronisere manuelt.
+
+## Tillatelser
+
+| Tillatelse | Hva den brukes til |
+|---|---|
+| `storage` | Lagre reservasjonsdata lokalt i nettleseren |
+| `unlimitedStorage` | Tillate lagring av full reservasjonshistorikk |
+| `*://app.dele.no/*` | Lese innlogging og hente data fra dele.no sitt API |
 
 ## Personvern
 
-All data forblir i nettleseren din. Utvidelsen sender ingen data til eksterne servere. Det eneste nettverkstrafikken som genereres er API-kall direkte til dele.no sine servere, med din eksisterende innlogging.
+- All data forblir i nettleseren din
+- Ingen data sendes til eksterne servere
+- Ingen sporing eller analyse
+- Eneste nettverkstrafikk er API-kall direkte til dele.no sine servere med din eksisterende innlogging
 
 ## Utvikling
 
@@ -54,12 +79,28 @@ Last inn utvidelsen som beskrevet under [Installasjon](#installasjon). Etter end
 ### Prosjektstruktur
 
 ```
-manifest.json          # Utvidelsesmanifest (Manifest V3)
-background.js          # Service worker / bakgrunnsskript
-content.js             # Content script (kjører på dele.no)
-popup/                 # Popup-UI (HTML/CSS/JS)
-icons/                 # Utvidelsesikoner
+manifest.json            # Utvidelsesmanifest (Manifest V3)
+background.js            # Bakgrunnsskript — synkronisering og caching
+content.js               # Content script — leser auth fra dele.no
+popup/
+  popup.html/css/js      # Popup-UI — rask oversikt
+dashboard/
+  dashboard.html/css/js  # Dashboard — fullstendig statistikk
+lib/
+  api.js                 # API-klient (paginering, retry, rate-limiting)
+  browser-polyfill.js    # Firefox/Chrome kompatibilitetslag
+  chart-helpers.js       # Chart.js hjelpefunksjoner
+  stats.js               # Statistikkberegninger (rene funksjoner)
+vendor/
+  chart.min.js           # Chart.js (bundlet)
+icons/                   # Utvidelsesikoner
 ```
+
+### Teknologi
+
+- Vanilla JS, HTML, CSS — ingen build-step
+- [Chart.js](https://www.chartjs.org/) for visualiseringer
+- WebExtension API (Manifest V3) — fungerer i Firefox og Chrome
 
 ## Lisens
 
