@@ -8,13 +8,14 @@
     pre { white-space: pre-wrap; word-break: break-all; }
     button { padding: 8px 16px; margin: 8px 4px 16px 0; cursor: pointer; }
     #output { background: #23262e; padding: 16px; border-radius: 8px; max-height: 80vh; overflow: auto; }
+    .info { color: #9ca1ad; margin-bottom: 8px; }
   </style>
 </head>
 <body>
   <h1>Debug</h1>
-  <button id="dump-btn">Dump sample (3 reservasjoner)</button>
-  <button id="dump-all-btn">Dump alle nøkler + verdier fra første</button>
-  <button id="save-btn">Last ned som JSON</button>
+  <button id="dump-first-btn">Vis første reservasjon</button>
+  <button id="dump-all-btn">Last ned alle reservasjoner (JSON)</button>
+  <p class="info" id="info"></p>
   <pre id="output">Klikk en knapp...</pre>
 
   <script src="debug.js"></script>
