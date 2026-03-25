@@ -31,6 +31,8 @@
       <a class="nav__link" href="#kilometer" data-section="kilometer">Kilometer</a>
       <a class="nav__link" href="#trender" data-section="trender">Trender</a>
       <a class="nav__link" href="#bilregnestyket" data-section="bilregnestyket">Bilregnestykket</a>
+      <a class="nav__link" href="#turkategorier" data-section="turkategorier">Turkategorier</a>
+      <a class="nav__link" href="#klima" data-section="klima">Klima</a>
     </div>
   </nav>
 
@@ -225,6 +227,80 @@
         </div>
 
         <p class="comparison__note" id="comparison-note"></p>
+      </div>
+    </section>
+
+    <!-- Section 6: Turkategorier -->
+    <section class="section" id="turkategorier">
+      <h2 class="section__title">Turkategorier</h2>
+
+      <div class="cards cards--2">
+        <div class="chart-container" style="grid-column: 1 / -1;">
+          <h3 class="chart-container__title">Kostnad per kategori</h3>
+          <canvas id="category-donut-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="card card--list">
+        <span class="card__label">Oversikt per kategori</span>
+        <div class="category-table" id="category-table"></div>
+      </div>
+
+      <div class="card card--list" id="uncategorized-section" hidden>
+        <span class="card__label">Ukategoriserte turer med forslag</span>
+        <div class="suggestion-list" id="suggestion-list"></div>
+      </div>
+    </section>
+
+    <!-- Section 7: Klimaregnskap -->
+    <section class="section" id="klima">
+      <h2 class="section__title">Klimaregnskap</h2>
+
+      <div id="co2-empty" class="empty-state empty-state--inline" hidden>
+        <p class="empty-state__text">Ingen kilometerdata tilgjengelig for klimaberegning.</p>
+      </div>
+
+      <div id="co2-content" hidden>
+        <div class="comparison">
+          <div class="comparison__column">
+            <span class="comparison__label">Bildeling</span>
+            <span class="comparison__amount" id="co2-sharing">&ndash;</span>
+            <span class="comparison__period">kg CO&#8322; per &aring;r</span>
+          </div>
+          <div class="comparison__vs">vs</div>
+          <div class="comparison__column">
+            <span class="comparison__label">Privatbil</span>
+            <span class="comparison__amount" id="co2-private">&ndash;</span>
+            <span class="comparison__period">kg CO&#8322; per &aring;r</span>
+          </div>
+        </div>
+
+        <div class="comparison__verdict" id="co2-verdict"></div>
+
+        <div class="chart-container">
+          <h3 class="chart-container__title">M&aring;nedlig CO&#8322;-utslipp</h3>
+          <canvas id="monthly-co2-chart"></canvas>
+        </div>
+
+        <div class="cards cards--3">
+          <div class="card">
+            <span class="card__label">Totalt utslipp</span>
+            <span class="card__value" id="co2-total">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Snitt per km</span>
+            <span class="card__value" id="co2-avg-km">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Elektriske turer</span>
+            <span class="card__value" id="co2-electric-pct">&ndash;</span>
+          </div>
+        </div>
+
+        <div class="card card--list">
+          <span class="card__label">Utslipp per drivstofftype</span>
+          <div id="co2-fuel-list" class="category-table"></div>
+        </div>
       </div>
     </section>
   </main>

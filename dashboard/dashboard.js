@@ -1,5 +1,6 @@
 import {
   filterValid,
+  filterDriven,
   costStats,
   monthlyCosts,
   yearlyCosts,
@@ -15,6 +16,18 @@ import {
 import { formatNOK, formatSyncTime } from "../lib/formatters.js";
 
 import { estimateOwnershipCost } from "../lib/ownership-cost.js";
+
+import {
+  CATEGORIES,
+  loadCategories,
+  saveCategory,
+  categoryStats,
+  autoSuggestAll,
+} from "../lib/categories.js";
+
+import { storage } from "../lib/browser-polyfill.js";
+
+import { totalCO2, co2Comparison, monthlyCO2 } from "../lib/co2.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -695,6 +708,169 @@ function renderOwnership(reservations) {
     `Eierkostnader inkluderer verditap, forsikring, årsavgift, vedlikehold og parkering.`;
 }
 
+// ---------- Rendering: Section 6 — Turkategorier ----------
+
+async function renderCategories(reservations) {
+  // 1. Load saved categories from storage
+  const savedCategories = await loadCategories(storage);
+
+  // 2. Auto-suggest for uncategorized trips
+  const suggestions = autoSuggestAll(reservations, savedCategories);
+
+  // 3. Merge saved + suggestions for stats display
+  const merged = { ...suggestions, ...savedCategories };
+
+  // 4. Calculate stats
+  const stats = categoryStats(reservations, merged);
+
+  // 5. Render donut chart (cost distribution)
+  destroyChart("categoryDonut");
+  const entries = Object.entries(stats).filter(([, v]) => v.totalCost > 0);
+  if (entries.length > 0) {
+    const labels = entries.map(([, v]) => v.label);
+    const data = entries.map(([, v]) => v.totalCost);
+    const colors = entries.map((_, i) => cssVar(`--color-chart-${(i % 5) + 1}`));
+
+    charts.categoryDonut = new Chart($("category-donut-chart"), {
+      type: "doughnut",
+      data: {
+        labels,
+        datasets: [{ data, backgroundColor: colors }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "right" },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const val = formatNOK.format(ctx.parsed);
+                const pct = Math.round((ctx.parsed / data.reduce((a, b) => a + b, 0)) * 100);
+                return `${ctx.label}: ${val} (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // 6. Render category table
+  const tableEl = $("category-table");
+  tableEl.innerHTML = "";
+  for (const [key, val] of entries.sort(([, a], [, b]) => b.totalCost - a.totalCost)) {
+    const row = document.createElement("div");
+    row.className = "category-row";
+    row.innerHTML = `
+      <span class="category-row__name">${escapeHtml(val.label)}</span>
+      <span class="category-row__stat">${val.count} turer</span>
+      <span class="category-row__stat">${formatNOK.format(val.totalCost)}</span>
+    `;
+    tableEl.appendChild(row);
+  }
+
+  // 7. Show uncategorized trips with suggestions (max 10)
+  const uncategorizedWithSuggestions = filterDriven(reservations)
+    .filter(r => !savedCategories[r.id] && suggestions[r.id])
+    .slice(0, 10);
+
+  if (uncategorizedWithSuggestions.length > 0) {
+    $("uncategorized-section").hidden = false;
+    const listEl = $("suggestion-list");
+    listEl.innerHTML = "";
+
+    for (const r of uncategorizedWithSuggestions) {
+      const catKey = suggestions[r.id];
+      const catLabel = CATEGORIES[catKey]?.label || catKey;
+      const item = document.createElement("div");
+      item.className = "suggestion-item";
+      item.innerHTML = `
+        <span class="suggestion-item__notes">${escapeHtml(r.notes || "Ingen notat")}</span>
+        <button class="suggestion-item__btn" data-id="${r.id}" data-cat="${catKey}">${escapeHtml(catLabel)}</button>
+      `;
+      listEl.appendChild(item);
+    }
+
+    // Click handler for accepting suggestions
+    listEl.addEventListener("click", async (e) => {
+      const btn = e.target.closest(".suggestion-item__btn");
+      if (!btn) return;
+      await saveCategory(storage, btn.dataset.id, btn.dataset.cat);
+      btn.textContent = "\u2713";
+      btn.disabled = true;
+    });
+  } else {
+    $("uncategorized-section").hidden = true;
+  }
+}
+
+// ---------- Rendering: Section 7 — Klimaregnskap ----------
+
+function renderClimate(reservations) {
+  const total = totalCO2(reservations);
+  const comparison = co2Comparison(reservations);
+  const monthly = monthlyCO2(reservations);
+
+  if (!total) {
+    $("co2-empty").hidden = false;
+    $("co2-content").hidden = true;
+    return;
+  }
+
+  $("co2-empty").hidden = true;
+  $("co2-content").hidden = false;
+
+  // Comparison
+  const formatKg = (kg) => `${formatKm.format(Math.round(kg))}`;
+  setText("co2-sharing", formatKg(comparison.sharingCO2Kg));
+  setText("co2-private", formatKg(comparison.privateCO2Kg));
+
+  const verdictEl = $("co2-verdict");
+  if (comparison.savedKg > 0) {
+    verdictEl.textContent = `Du sparer ${formatKg(comparison.savedKg)} kg CO\u2082 per \u00e5r med bildeling`;
+    verdictEl.className = "comparison__verdict comparison__verdict--saving";
+  } else {
+    verdictEl.textContent = `Bildeling gir ${formatKg(Math.abs(comparison.savedKg))} kg mer CO\u2082 per \u00e5r`;
+    verdictEl.className = "comparison__verdict comparison__verdict--more";
+  }
+
+  // Monthly chart
+  destroyChart("monthlyCO2");
+  if (monthly.length > 0) {
+    charts.monthlyCO2 = createBarChart(
+      $("monthly-co2-chart"),
+      monthly.map(m => formatMonthLabel(m.month)),
+      monthly.map(m => Math.round(m.co2Kg)),
+      "CO\u2082",
+      { yTitle: "Kg" }
+    );
+  }
+
+  // Stat cards
+  setText("co2-total", `${formatKm.format(Math.round(total.totalKg))} kg`);
+  setText("co2-avg-km", `${Math.round(total.avgPerKm)} g/km`);
+
+  // Electric percentage
+  const elTrips = total.byFuelType["Elektrisitet"]?.trips || 0;
+  const elPct = total.tripCount > 0 ? Math.round((elTrips / total.tripCount) * 100) : 0;
+  setText("co2-electric-pct", `${elPct}%`);
+
+  // Fuel type breakdown
+  const fuelList = $("co2-fuel-list");
+  fuelList.innerHTML = "";
+  for (const [fuel, data] of Object.entries(total.byFuelType).sort(([,a],[,b]) => b.kg - a.kg)) {
+    if (data.trips === 0) continue;
+    const row = document.createElement("div");
+    row.className = "category-row";
+    row.innerHTML = `
+      <span class="category-row__name">${escapeHtml(fuel)}</span>
+      <span class="category-row__stat">${data.trips} turer</span>
+      <span class="category-row__stat">${formatKm.format(Math.round(data.kg))} kg</span>
+    `;
+    fuelList.appendChild(row);
+  }
+}
+
 // ---------- Utility ----------
 
 function escapeHtml(str) {
@@ -765,6 +941,8 @@ async function init() {
   renderMileage(allReservations);
   renderTrends(allReservations);
   renderOwnership(allReservations);
+  await renderCategories(allReservations);
+  renderClimate(allReservations);
 
   showMain();
 }
@@ -785,6 +963,8 @@ syncBtn.addEventListener("click", async () => {
     renderMileage(allReservations);
     renderTrends(allReservations);
     renderOwnership(allReservations);
+    await renderCategories(allReservations);
+    renderClimate(allReservations);
 
     showMain();
   } else {
