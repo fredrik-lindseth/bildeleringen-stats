@@ -13,6 +13,8 @@
   --color-btn-secondary-bg: #f0f2f5;
   --color-btn-secondary-hover: #e4e7ec;
   --color-btn-secondary-text: #4a90d9;
+  --color-secondary: #e87949;
+  --color-tertiary: #4caf7c;
   --color-shadow: rgba(0, 0, 0, 0.06);
 }
 
@@ -32,6 +34,8 @@
     --color-btn-secondary-bg: #2a2d35;
     --color-btn-secondary-hover: #33373f;
     --color-btn-secondary-text: #5a9de6;
+    --color-secondary: #f0935f;
+    --color-tertiary: #6fd092;
     --color-shadow: rgba(0, 0, 0, 0.2);
   }
 }
@@ -134,6 +138,19 @@ body {
   font-size: 18px;
   font-weight: 600;
   line-height: 1.2;
+}
+
+.card__value--secondary {
+  color: var(--color-secondary);
+}
+
+/* Empty note for months with no trips */
+.stats__empty-note {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 8px 0;
+  font-style: italic;
 }
 
 /* Sparkline */

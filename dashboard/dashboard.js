@@ -48,6 +48,10 @@ function colorWithAlpha(cssColor, alpha) {
   });
 }
 
+// Set Chart.js global defaults for current theme
+Chart.defaults.color = cssVar("--color-text-secondary");
+Chart.defaults.borderColor = cssVar("--color-border");
+
 // ---------- Formatters ----------
 
 const formatKm = new Intl.NumberFormat("nb-NO", {

@@ -16,6 +16,7 @@ const sparklineCanvas = document.getElementById("sparkline-canvas");
 const syncBtn = document.getElementById("sync-btn");
 const lastSyncedEl = document.getElementById("last-synced");
 const dashboardLink = document.getElementById("dashboard-link");
+const emptyNote = document.getElementById("empty-note");
 
 // Track chart instance to avoid leaks on re-render
 let sparklineChart = null;
@@ -76,6 +77,9 @@ function renderStats(reservations) {
   avgCost.textContent = stats.thisMonth
     ? formatNOK.format(stats.thisMonth.average)
     : "–";
+
+  // Show empty note if no trips this month
+  emptyNote.hidden = !(stats.tripsThisMonth === 0 && stats.thisMonth === null);
 
   // Most used car (across all data)
   const patterns = usagePatterns(reservations);
