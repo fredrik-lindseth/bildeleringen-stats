@@ -27,6 +27,15 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+function broadcastProgress(phase, current, total) {
+  browserAPI.runtime.sendMessage({
+    type: "SYNC_PROGRESS",
+    phase,
+    current,
+    total,
+  }).catch(() => {}); // Ignore if no listener (popup closed)
+}
+
 async function getAuth() {
   if (currentAuth) return currentAuth;
 
@@ -53,6 +62,7 @@ async function handleSync(force = false) {
   }
 
   try {
+    broadcastProgress("FETCHING_LIST", 0, 0);
     const reservations = await fetchAllReservations(auth.token, auth.membershipId);
 
     const existingDetails = cached.reservations || [];
@@ -61,7 +71,10 @@ async function handleSync(force = false) {
 
     let allDetails;
     if (newReservations.length > 0) {
-      const newDetails = await fetchAllDetails(newReservations, auth.token);
+      broadcastProgress("FETCHING_DETAILS", 0, newReservations.length);
+      const newDetails = await fetchAllDetails(newReservations, auth.token, (current, total) => {
+        broadcastProgress("FETCHING_DETAILS", current, total);
+      });
       allDetails = [...newDetails, ...existingDetails];
     } else {
       allDetails = existingDetails;
