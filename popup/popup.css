@@ -144,6 +144,15 @@ body {
   color: var(--color-secondary);
 }
 
+.card__value--tertiary {
+  color: var(--color-tertiary);
+}
+
+.card--highlight {
+  border-color: var(--color-tertiary);
+  border-width: 1px;
+}
+
 /* Empty note for months with no trips */
 .stats__empty-note {
   text-align: center;

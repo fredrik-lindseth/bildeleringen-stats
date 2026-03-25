@@ -1,6 +1,8 @@
 import { currentMonthStats, monthlyCosts, usagePatterns } from "../lib/stats.js";
 import { createSparkline } from "../lib/chart-helpers.js";
 import { formatNOK, formatSyncTime } from "../lib/formatters.js";
+import { estimateOwnershipCost } from "../lib/ownership-cost.js";
+import { co2Comparison } from "../lib/co2.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -97,6 +99,29 @@ function renderStats(reservations) {
       sparklineCanvas,
       last6.map((m) => m.total)
     );
+  }
+
+  // Savings vs car ownership this year
+  const currentYear = new Date().getFullYear();
+  const ownership = estimateOwnershipCost(reservations, currentYear);
+  const savingsEl = document.getElementById("yearly-savings");
+  if (ownership && ownership.savings > 0) {
+    savingsEl.textContent = formatNOK.format(ownership.savings);
+  } else if (ownership) {
+    savingsEl.textContent = "0 kr";
+    savingsEl.classList.remove("card__value--tertiary");
+  } else {
+    savingsEl.textContent = "–";
+  }
+
+  // CO2 saved this year
+  const yearData = reservations.filter(r => new Date(r.start).getFullYear() === currentYear);
+  const co2 = co2Comparison(yearData);
+  const co2El = document.getElementById("yearly-co2");
+  if (co2 && co2.savedKg > 0) {
+    co2El.textContent = `${Math.round(co2.savedKg)} kg`;
+  } else {
+    co2El.textContent = "–";
   }
 
   statsSection.hidden = false;
