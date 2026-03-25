@@ -732,7 +732,8 @@ function renderOwnership(reservations) {
       <p><code>Verditap: ${formatNOK.format(bd.depreciation)} + Forsikring: ${formatNOK.format(bd.insurance)} + Avgift: ${formatNOK.format(bd.tax)} + Vedlikehold: ${formatNOK.format(bd.maintenance)} + Parkering: ${formatNOK.format(bd.parking)} + Drivstoff: ${formatNOK.format(bd.fuel)}</code></p>
       <p><code>= ${formatNOK.format(result.ownershipCost)}</code></p>
       <p style="margin-top: 4px;"><strong>Bildeling:</strong> Sum av alle dine faktiske kostnader, annualisert: <code>${formatNOK.format(result.sharingCost)}</code></p>
-      <p style="margin-top: 8px;">Eierkostnader er estimater basert p\u00e5 norske gjennomsnitt (NAF, OFV). Bildeleforbruk er dine faktiske kostnader fra dele.no.</p>
+      <p style="margin-top: 8px;">Eierkostnader er estimater basert p\u00e5 norske gjennomsnitt (NAF Bilkostnadsindeks, OFV). Bildeleforbruk er dine faktiske kostnader fra dele.no.</p>
+      <p style="margin-top: 4px;">Kontekst: 75% av Bildeleringen-medlemmer har ikke egen bil, og 49% har latt v\u00e6re \u00e5 kj\u00f8pe bil pga. bildeling. Hver delebil erstatter 10\u201315 privatbiler i Bergen (T\u00d8I 1895/2022).</p>
     `;
   }
 }
