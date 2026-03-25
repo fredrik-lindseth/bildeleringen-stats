@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Bildeleringen Stats",
+  "version": "0.1.0",
+  "description": "Statistikk og analyse av ditt bildeleforbruk på dele.no",
+  "permissions": ["storage", "unlimitedStorage"],
+  "host_permissions": ["*://app.dele.no/*"],
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://app.dele.no/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}
