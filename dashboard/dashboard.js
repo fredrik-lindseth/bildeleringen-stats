@@ -27,7 +27,7 @@ import {
 
 import { storage } from "../lib/browser-polyfill.js";
 
-import { totalCO2, co2Comparison, monthlyCO2, CO2_METHOD } from "../lib/co2.js";
+import { totalCO2, monthlyCO2 } from "../lib/co2.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -849,29 +849,31 @@ function renderClimate(reservations) {
   $("co2-empty").hidden = true;
   $("co2-content").hidden = false;
 
-  // Comparison
-  const formatKg = (kg) => `${formatKm.format(Math.round(kg))}`;
-  setText("co2-sharing", formatKg(comparison.sharingCO2Kg));
-  setText("co2-private", formatKg(comparison.privateCO2Kg));
+  // Stat cards
+  setText("co2-total", `${formatKm.format(Math.round(total.totalKg))} kg`);
+  setText("co2-avg-km", `${Math.round(total.avgPerKm)} g/km`);
 
-  const verdictEl = $("co2-verdict");
-  if (comparison.savedKg > 0) {
-    verdictEl.textContent = `Dine turer slapp ut ${formatKg(comparison.savedKg)} kg CO\u2082 mindre enn tilsvarende i gjennomsnittlig privatbil`;
-    verdictEl.className = "comparison__verdict comparison__verdict--saving";
-  } else {
-    verdictEl.textContent = `Dine turer slapp ut ${formatKg(Math.abs(comparison.savedKg))} kg CO\u2082 mer enn tilsvarende i gjennomsnittlig privatbil`;
-    verdictEl.className = "comparison__verdict comparison__verdict--more";
-  }
+  // Electric percentage
+  const elTrips = total.byFuelType["Elektrisitet"]?.trips || 0;
+  const elPct = total.tripCount > 0 ? Math.round((elTrips / total.tripCount) * 100) : 0;
+  setText("co2-electric-pct", `${elPct}%`);
 
-  // Methodology detail
+  // Methodology detail — show actual calculation per fuel type
   const methodDetail = $("co2-method-detail");
-  if (methodDetail && comparison) {
+  if (methodDetail) {
+    const fuelLines = Object.entries(total.byFuelType)
+      .filter(([, d]) => d.trips > 0)
+      .sort(([, a], [, b]) => b.kg - a.kg)
+      .map(([fuel, d]) => {
+        const gPerKm = d.km > 0 ? Math.round((d.kg * 1000) / d.km) : 0;
+        return `<p>${fuel}: <code>${formatKm.format(d.km)} km \u00d7 ${gPerKm} g/km = ${formatKm.format(Math.round(d.kg))} kg CO\u2082</code></p>`;
+      })
+      .join("");
     methodDetail.innerHTML = `
-      <p><strong>Utregning:</strong></p>
-      <p>Dine turer: <code>${formatKm.format(comparison.totalKm)} km \u00d7 ${Math.round(comparison.avgGPerKm)} g/km = ${formatKm.format(Math.round(comparison.sharingCO2Kg))} kg CO\u2082</code></p>
-      <p>Privatbil: <code>${formatKm.format(comparison.totalKm)} km \u00d7 ${comparison.fleetAvgGPerKm} g/km = ${formatKm.format(Math.round(comparison.privateCO2Kg))} kg CO\u2082</code></p>
-      <p>Differanse: <code>${formatKm.format(Math.round(comparison.savedKg))} kg CO\u2082</code></p>
-      <p style="margin-top: 8px;">${CO2_METHOD.note}</p>
+      <p><strong>Beregnet fra faktisk biltype per tur:</strong></p>
+      ${fuelLines}
+      <p style="margin-top: 4px;"><strong>Totalt:</strong> <code>${formatKm.format(Math.round(total.totalKg))} kg CO\u2082</code> fra <code>${formatKm.format(total.totalKm)} km</code></p>
+      <p style="margin-top: 8px;">Utslipp beregnes per tur basert på bilens drivstofftype og kategori. Elbiler = 0 g/km. Bensin og diesel estimert fra norske gjennomsnitt per bilkategori (Miljødirektoratet).</p>
     `;
   }
 
@@ -886,15 +888,6 @@ function renderClimate(reservations) {
       { yTitle: "Kg" }
     );
   }
-
-  // Stat cards
-  setText("co2-total", `${formatKm.format(Math.round(total.totalKg))} kg`);
-  setText("co2-avg-km", `${Math.round(total.avgPerKm)} g/km`);
-
-  // Electric percentage
-  const elTrips = total.byFuelType["Elektrisitet"]?.trips || 0;
-  const elPct = total.tripCount > 0 ? Math.round((elTrips / total.tripCount) * 100) : 0;
-  setText("co2-electric-pct", `${elPct}%`);
 
   // Fuel type breakdown
   const fuelList = $("co2-fuel-list");
