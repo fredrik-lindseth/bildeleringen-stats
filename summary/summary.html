@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bildeleringen — Årsoppsummering</title>
+  <link rel="stylesheet" href="summary.css">
+</head>
+<body>
+  <div class="summary">
+    <div class="year-picker">
+      <select id="year-select"></select>
+    </div>
+
+    <section class="slide slide--hero">
+      <h1 class="slide__title">Ditt bildeleår</h1>
+      <span class="slide__year" id="summary-year"></span>
+    </section>
+
+    <section class="slide">
+      <span class="slide__label">Totalt brukt på bildeling</span>
+      <span class="slide__big" id="total-cost"></span>
+      <span class="slide__sub" id="trip-count"></span>
+    </section>
+
+    <section class="slide">
+      <span class="slide__label">Kjørt totalt</span>
+      <span class="slide__big" id="total-km"></span>
+      <span class="slide__sub" id="longest-trip"></span>
+    </section>
+
+    <section class="slide">
+      <span class="slide__label">Favorittbil</span>
+      <span class="slide__big" id="fav-car"></span>
+      <span class="slide__sub" id="fav-car-trips"></span>
+    </section>
+
+    <section class="slide">
+      <span class="slide__label">Travleste måned</span>
+      <span class="slide__big" id="busiest-month"></span>
+      <span class="slide__sub" id="busiest-month-cost"></span>
+    </section>
+
+    <section class="slide slide--green">
+      <span class="slide__label">Spart sammenlignet med å eie bil</span>
+      <span class="slide__big" id="savings"></span>
+      <span class="slide__sub" id="savings-vs"></span>
+    </section>
+
+    <section class="slide slide--green">
+      <span class="slide__label">CO₂ spart</span>
+      <span class="slide__big" id="co2-saved"></span>
+      <span class="slide__sub">sammenlignet med gjennomsnittlig privatbil</span>
+    </section>
+
+    <section class="slide slide--closing">
+      <h2 class="slide__title">Et år uten egen bil.</h2>
+    </section>
+  </div>
+
+  <script src="../vendor/chart.min.js"></script>
+  <script type="module" src="summary.js"></script>
+</body>
+</html>

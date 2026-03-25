@@ -963,6 +963,11 @@ async function init() {
   showMain();
 }
 
+// Summary button
+$("summary-btn").addEventListener("click", () => {
+  browserAPI.tabs.create({ url: browserAPI.runtime.getURL("summary/summary.html") });
+});
+
 // Sync button
 syncBtn.addEventListener("click", async () => {
   const synced = await handleSync(true);
