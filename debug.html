@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug — Bildeleringen Stats</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1d23; color: #e8eaef; }
+    pre { white-space: pre-wrap; word-break: break-all; }
+    button { padding: 8px 16px; margin: 8px 4px 16px 0; cursor: pointer; }
+    #output { background: #23262e; padding: 16px; border-radius: 8px; max-height: 80vh; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Debug</h1>
+  <button id="dump-btn">Dump sample (3 reservasjoner)</button>
+  <button id="dump-all-btn">Dump alle nøkler + verdier fra første</button>
+  <button id="save-btn">Last ned som JSON</button>
+  <pre id="output">Klikk en knapp...</pre>
+
+  <script>
+    const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+    const output = document.getElementById("output");
+    let lastData = null;
+
+    document.getElementById("dump-btn").addEventListener("click", async () => {
+      const result = await browserAPI.runtime.sendMessage({ type: "DEBUG_DUMP" });
+      lastData = result;
+      output.textContent = JSON.stringify(result, null, 2);
+    });
+
+    document.getElementById("dump-all-btn").addEventListener("click", async () => {
+      const data = await browserAPI.runtime.sendMessage({ type: "GET_DATA" });
+      const reservations = data.reservations || [];
+      if (reservations.length === 0) {
+        output.textContent = "Ingen reservasjoner i cache.";
+        return;
+      }
+      const first = reservations[0];
+      lastData = { keys: Object.keys(first), first };
+      output.textContent = JSON.stringify(lastData, null, 2);
+    });
+
+    document.getElementById("save-btn").addEventListener("click", () => {
+      if (!lastData) return;
+      const blob = new Blob([JSON.stringify(lastData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bildeleringen-debug.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
