@@ -4,18 +4,23 @@ Nettleserutvidelse som gir deg statistikk og analyse av ditt bildeleforbruk på 
 
 ## Skjermbilder
 
-*Kommer snart.*
+_Kommer snart._
 
 ## Funksjoner
 
-- **Popup:** Rask oversikt over forbruk denne og forrige måned, antall turer, snittkostnad og mest brukte bil
-- **Dashboard:** Fullstendig statistikk med fire seksjoner:
+- **Popup:** Rask oversikt over forbruk denne og forrige måned, antall turer, snittkostnad, mest brukte bil, årlig besparelse og CO₂
+- **Dashboard:** Fullstendig statistikk med syv seksjoner:
   - **Kostnader** — måned-over-måned, årlig totalforbruk, snitt/median per tur, dyreste/billigste tur, kostnad per km
   - **Bruksmønster** — heatmap (ukedag × tid), turer per måned, gjennomsnittlig varighet, mest brukte biler
   - **Kilometer** — total distanse, snitt per tur, lengste tur, km per bil
   - **Trender** — år-over-år sammenligning, rullerende 3-måneders snitt, sesongmønster
+  - **Bilregnestykket** — sammenligning mot å eie bil (kategoribasert + Volvo EX C40 2026)
+  - **Turkategorier** — automatisk kategorisering av turer fra notater, kostnad per kategori
+  - **Klimaregnskap** — CO₂-utslipp basert på drivstofftype, sammenligning mot privatbil
+- **Årsoppsummering** — visuell "year in review" med nøkkeltall, besparelse og klimaeffekt
 - Inkrementell synkronisering — henter kun nye turer etter første innlasting
 - All data lagres lokalt i nettleseren, ingen eksterne servere
+- Kostnader og CO₂ er estimater basert på norske gjennomsnitt (NAF, SSB, Miljødirektoratet)
 
 ## Installasjon
 
@@ -49,10 +54,10 @@ Cachen oppdateres automatisk maks én gang per time. Du kan også synkronisere m
 
 ## Tillatelser
 
-| Tillatelse | Hva den brukes til |
-|---|---|
-| `storage` | Lagre reservasjonsdata lokalt i nettleseren |
-| `unlimitedStorage` | Tillate lagring av full reservasjonshistorikk |
+| Tillatelse          | Hva den brukes til                                 |
+| ------------------- | -------------------------------------------------- |
+| `storage`           | Lagre reservasjonsdata lokalt i nettleseren        |
+| `unlimitedStorage`  | Tillate lagring av full reservasjonshistorikk      |
 | `*://app.dele.no/*` | Lese innlogging og hente data fra dele.no sitt API |
 
 ## Personvern
@@ -86,10 +91,16 @@ popup/
   popup.html/css/js      # Popup-UI — rask oversikt
 dashboard/
   dashboard.html/css/js  # Dashboard — fullstendig statistikk
+summary/
+  summary.html/css/js    # Årsoppsummering — visuell year-in-review
 lib/
   api.js                 # API-klient (paginering, retry, rate-limiting)
   browser-polyfill.js    # Firefox/Chrome kompatibilitetslag
+  categories.js          # Turkategorisering med auto-forslag fra notater
   chart-helpers.js       # Chart.js hjelpefunksjoner
+  co2.js                 # CO₂-beregning per drivstofftype og bilkategori
+  formatters.js          # Delte formateringsfunksjoner (NOK, dato)
+  ownership-cost.js      # Eierkostnadsmodell (kategori + Volvo EX C40)
   stats.js               # Statistikkberegninger (rene funksjoner)
 vendor/
   chart.min.js           # Chart.js (bundlet)
