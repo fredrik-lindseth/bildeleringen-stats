@@ -39,14 +39,40 @@ const dashboardLink = document.getElementById("dashboard-link");
 // Track chart instance to avoid leaks on re-render
 let sparklineChart = null;
 
-function showStatus(message) {
-  statusEl.textContent = message;
+const statusText = document.getElementById("status-text");
+const progressEl = document.getElementById("progress");
+const progressBar = document.getElementById("progress-bar");
+
+function showStatus(message, progress = null) {
+  statusText.textContent = message;
   statusEl.hidden = false;
+
+  if (progress !== null) {
+    progressEl.hidden = false;
+    progressBar.style.width = `${progress}%`;
+  } else {
+    progressEl.hidden = true;
+    progressBar.style.width = "0%";
+  }
 }
 
 function hideStatus() {
   statusEl.hidden = true;
+  progressEl.hidden = true;
 }
+
+// Listen for progress updates from background
+browserAPI.runtime.onMessage.addListener((message) => {
+  if (message.type === "SYNC_PROGRESS") {
+    const { phase, current, total } = message;
+    if (phase === "FETCHING_LIST") {
+      showStatus("Henter reservasjonsliste...");
+    } else if (phase === "FETCHING_DETAILS" && total > 0) {
+      const pct = Math.round((current / total) * 100);
+      showStatus(`Henter detaljer: ${current} av ${total}`, pct);
+    }
+  }
+});
 
 function renderStats(reservations) {
   const stats = currentMonthStats(reservations);
