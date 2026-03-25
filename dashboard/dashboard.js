@@ -15,7 +15,7 @@ import {
 
 import { formatNOK, formatSyncTime } from "../lib/formatters.js";
 
-import { estimateOwnershipCost } from "../lib/ownership-cost.js";
+import { estimateOwnershipCost, estimateVolvoComparison } from "../lib/ownership-cost.js";
 
 import {
   CATEGORIES,
@@ -700,12 +700,28 @@ function renderOwnership(reservations) {
     },
   });
 
+  // Volvo EX C40 comparison
+  const volvo = estimateVolvoComparison(reservations);
+  if (volvo) {
+    setText("volvo-sharing-cost", formatNOK.format(volvo.sharingCost));
+    setText("volvo-ownership-cost", formatNOK.format(volvo.ownershipCost));
+
+    const volvoVerdictEl = $("volvo-verdict");
+    if (volvo.savings > 0) {
+      volvoVerdictEl.textContent = `Du sparer ${formatNOK.format(volvo.savings)} per år med bildeling`;
+      volvoVerdictEl.className = "comparison__verdict comparison__verdict--saving";
+    } else {
+      volvoVerdictEl.textContent = `Bildeling koster ${formatNOK.format(Math.abs(volvo.savings))} mer per år`;
+      volvoVerdictEl.className = "comparison__verdict comparison__verdict--more";
+    }
+  }
+
   // Note text
   const categoryName = result.category || "ukjent";
   const noteEl = $("comparison-note");
   noteEl.textContent =
-    `Estimat basert på din mest brukte bilkategori (${categoryName}). ` +
-    `Eierkostnader inkluderer verditap, forsikring, årsavgift, vedlikehold og parkering.`;
+    `Estimat basert på din mest brukte bilkategori (${categoryName}) og Volvo EX C40 2026. ` +
+    `Eierkostnader inkluderer verditap, forsikring, årsavgift, vedlikehold, parkering og drivstoff/strøm.`;
 }
 
 // ---------- Rendering: Section 6 — Turkategorier ----------

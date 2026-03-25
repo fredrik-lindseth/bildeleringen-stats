@@ -354,6 +354,14 @@ body {
   margin-bottom: 20px;
 }
 
+.section__subtitle {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 32px 0 16px;
+  color: var(--color-text-secondary);
+}
+
 /* ---- Year selector ---- */
 .year-selector {
   display: flex;
