@@ -34,6 +34,7 @@
       <a class="nav__link" href="#bilregnestyket" data-section="bilregnestyket">Bilregnestykket</a>
       <a class="nav__link" href="#turkategorier" data-section="turkategorier">Turkategorier</a>
       <a class="nav__link" href="#klima" data-section="klima">Klima</a>
+      <a class="nav__link" href="#transport" data-section="transport">Transport</a>
     </div>
   </nav>
 
@@ -362,6 +363,73 @@
         <div class="method-block">
           <button class="method-toggle" id="co2-method-toggle">Slik beregner vi &#9656;</button>
           <div class="method-detail" id="co2-method-detail" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 8: Min transport -->
+    <section class="section" id="transport">
+      <div class="section__header">
+        <h2 class="section__title">Min transport</h2>
+        <button class="btn btn--export" data-section="transport" title="Last ned som bilde">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 1v10M4 8l4 4 4-4M2 13h12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Year selector for transport data -->
+      <div class="transport-year" id="transport-year-selector">
+        <label for="transport-year">Velg &aring;r:</label>
+        <select id="transport-year" class="transport-select"></select>
+      </div>
+
+      <!-- Input form -->
+      <div class="card card--list">
+        <span class="card__label">Annen transport (manuell registrering)</span>
+        <form id="transport-form" class="transport-form">
+          <!-- JS will build rows for each transport mode -->
+          <div id="transport-fields"></div>
+          <button type="submit" class="btn btn--save">Lagre</button>
+          <span id="transport-save-status" class="transport-save-status"></span>
+        </form>
+      </div>
+
+      <!-- Summary (shown after data exists) -->
+      <div id="transport-summary" hidden>
+        <div class="chart-container">
+          <h3 class="chart-container__title">Transportkostnader fordelt</h3>
+          <canvas id="transport-cost-chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h3 class="chart-container__title">CO&#8322;-utslipp fordelt</h3>
+          <canvas id="transport-co2-chart"></canvas>
+        </div>
+
+        <div class="cards cards--3">
+          <div class="card">
+            <span class="card__label">Total transportkostnad</span>
+            <span class="card__value" id="transport-total-cost">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Totalt CO&#8322;</span>
+            <span class="card__value" id="transport-total-co2">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Bildeling-andel (kostnad)</span>
+            <span class="card__value" id="transport-sharing-pct">&ndash;</span>
+          </div>
+        </div>
+
+        <div class="card card--list">
+          <span class="card__label">Detaljert oversikt</span>
+          <div class="category-table" id="transport-table"></div>
+        </div>
+
+        <div class="method-block">
+          <button class="method-toggle" id="transport-method-toggle">Slik beregner vi &#9656;</button>
+          <div class="method-detail" id="transport-method-detail" hidden></div>
         </div>
       </div>
     </section>

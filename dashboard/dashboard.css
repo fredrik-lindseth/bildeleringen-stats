@@ -851,6 +851,110 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* ---- Transport ---- */
+.transport-year {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.transport-select {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: var(--font-body);
+}
+
+.transport-form {
+  margin-top: 16px;
+}
+
+.transport-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+}
+
+.transport-row:last-of-type {
+  border-bottom: none;
+}
+
+.transport-row__label {
+  font-weight: 500;
+}
+
+.transport-row input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: 13px;
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.transport-row input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.transport-row input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.btn--save {
+  margin-top: 12px;
+  padding: 8px 20px;
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.btn--save:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.transport-save-status {
+  margin-left: 12px;
+  font-size: 13px;
+  color: var(--color-tertiary);
+}
+
+/* Sykkel row has fewer columns */
+.transport-row--narrow {
+  grid-template-columns: 120px 1fr;
+}
+
+@media (max-width: 480px) {
+  .transport-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .transport-row__label {
+    grid-column: 1 / -1;
+    padding-bottom: 2px;
+  }
+  .transport-row--narrow {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
