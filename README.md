@@ -2,6 +2,32 @@
 
 Nettleserutvidelse som gir deg oversikt over ditt bildeleforbruk, transportkostnader og klimaavtrykk. For medlemmer av [Bildeleringen / dele.no](https://dele.no).
 
+## Skjermbilder
+
+### Kostnader
+![Kostnader](docs/screenshots/bildeleringen-kostnader.png)
+
+### Bruksmønster
+![Bruksmønster](docs/screenshots/bildeleringen-bruksmonster.png)
+
+### Kilometer
+![Kilometer](docs/screenshots/bildeleringen-kilometer.png)
+
+### Trender
+![Trender](docs/screenshots/bildeleringen-trender.png)
+
+### Bilregnestykket
+![Bilregnestykket](docs/screenshots/bildeleringen-bilregnestyket.png)
+
+### Turkategorier
+![Turkategorier](docs/screenshots/bildeleringen-turkategorier.png)
+
+### Klimaregnskap
+![Klimaregnskap](docs/screenshots/bildeleringen-klima.png)
+
+### Transportkalkulator
+![Transport](docs/screenshots/bildeleringen-transport.png)
+
 ## Funksjoner
 
 - **Popup** — månedlig forbruk, snittpris, mest brukte bil, besparelse og CO₂
