@@ -24,6 +24,16 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ hasAuth: currentAuth !== null });
   }
 
+  if (message.type === "DEBUG_DUMP") {
+    storage.get(["reservations"]).then((data) => {
+      const reservations = data.reservations || [];
+      const sample = reservations.slice(0, 3);
+      const keys = reservations.length > 0 ? Object.keys(reservations[0]) : [];
+      sendResponse({ count: reservations.length, keys, sample });
+    });
+    return true;
+  }
+
   return true;
 });
 
