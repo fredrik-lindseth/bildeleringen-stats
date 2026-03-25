@@ -253,15 +253,18 @@ function renderCosts(reservations) {
   const mileage = mileageStats(filtered);
 
   // Yearly total display
+  const yearlyEl = document.getElementById("cost-yearly-total");
   if (selectedYear === "all" && yearly.length > 0) {
-    const yearlyText = yearly
-      .map((y) => `${y.year}: ${formatNOK.format(y.total)}`)
-      .join("  ·  ");
-    setText("cost-yearly-total", yearlyText);
+    yearlyEl.innerHTML = yearly
+      .map(
+        (y) =>
+          `<div class="yearly-row"><span>${y.year}</span><span>${formatNOK.format(y.total)}</span></div>`
+      )
+      .join("");
   } else if (stats) {
-    setText("cost-yearly-total", formatNOK.format(stats.total));
+    yearlyEl.textContent = formatNOK.format(stats.total);
   } else {
-    setText("cost-yearly-total", "–");
+    yearlyEl.textContent = "–";
   }
 
   // Stat cards
