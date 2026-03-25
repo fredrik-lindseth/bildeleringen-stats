@@ -1,0 +1,121 @@
+:root {
+  --sum-bg: #0f1117;
+  --sum-text: #f0f1f4;
+  --sum-text-secondary: #8a8f9e;
+  --sum-accent: #5a9de6;
+  --sum-green: #6fd092;
+  --sum-green-dim: rgba(111, 208, 146, 0.15);
+  --sum-picker-bg: rgba(255, 255, 255, 0.1);
+  --sum-picker-border: rgba(255, 255, 255, 0.15);
+}
+
+/* No light/dark toggle needed — summary is always dark themed for visual impact */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--sum-bg);
+  color: var(--sum-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+}
+
+.summary {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.year-picker {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.year-picker select {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--sum-picker-bg);
+  color: var(--sum-text);
+  border: 1px solid var(--sum-picker-border);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.slide {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  scroll-snap-align: start;
+}
+
+.slide--hero {
+  min-height: 100vh;
+}
+
+.slide__title {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--sum-text-secondary);
+}
+
+.slide__year {
+  font-size: 96px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  margin-top: 8px;
+}
+
+.slide__label {
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sum-text-secondary);
+  margin-bottom: 12px;
+}
+
+.slide__big {
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.slide__sub {
+  font-size: 16px;
+  color: var(--sum-text-secondary);
+  margin-top: 8px;
+}
+
+.slide--green .slide__big {
+  color: var(--sum-green);
+}
+
+.slide--closing {
+  min-height: 60vh;
+}
+
+.slide--closing .slide__title {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--sum-text);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .slide__year { font-size: 64px; }
+  .slide__big { font-size: 40px; }
+  .slide--closing .slide__title { font-size: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { scroll-snap-type: none; }
+}
