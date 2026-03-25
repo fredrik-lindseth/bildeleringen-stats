@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bildeleringen Stats</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <header class="header">
+      <h1 class="header__title">Bildeleringen Stats</h1>
+    </header>
+
+    <div id="status" class="status" hidden></div>
+
+    <section id="stats-section" class="stats" hidden>
+      <div class="cards">
+        <div class="card">
+          <span class="card__label">Denne måneden</span>
+          <span class="card__value" id="spend-this-month">–</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Forrige måned</span>
+          <span class="card__value" id="spend-last-month">–</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Turer denne mnd.</span>
+          <span class="card__value" id="trips-this-month">–</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Snittpris per tur</span>
+          <span class="card__value" id="avg-cost">–</span>
+        </div>
+        <div class="card card--wide">
+          <span class="card__label">Mest brukte bil</span>
+          <span class="card__value" id="most-used-car">–</span>
+        </div>
+      </div>
+
+      <div class="sparkline-container">
+        <span class="sparkline-label">Siste 6 måneder</span>
+        <canvas id="sparkline-canvas" width="300" height="60"></canvas>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <button id="sync-btn" class="btn btn--sync" type="button">
+        Synkroniser
+      </button>
+      <span id="last-synced" class="footer__sync-time"></span>
+      <a id="dashboard-link" class="btn btn--dashboard" href="#">
+        Åpne dashboard
+      </a>
+    </footer>
+  </div>
+
+  <script src="../vendor/chart.min.js"></script>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
