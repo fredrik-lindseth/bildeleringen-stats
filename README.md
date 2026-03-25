@@ -49,24 +49,35 @@ Hver dashboard-seksjon kan lastes ned som PNG-bilde for rapportering eller delin
 
 ## Installasjon
 
+### Rask installasjon (fra release)
+
+1. Last ned `bildeleringen-stats-v*.zip` fra [Releases](../../releases)
+2. Følg instruksjonene for din nettleser under
+
 ### Firefox
 
-1. Last ned eller klon dette repoet
+**Fra zip-fil:**
+1. Gå til `about:debugging#/runtime/this-firefox`
+2. Klikk «Last inn midlertidig tillegg...»
+3. Velg den nedlastede `.zip`-filen
+
+**Fra kildekode:**
+1. Klon repoet: `git clone <repo-url>`
 2. Gå til `about:debugging#/runtime/this-firefox`
 3. Klikk «Last inn midlertidig tillegg...»
 4. Velg `manifest.json` fra prosjektmappen
 
 ### Chrome / Chromium
 
-1. Last ned eller klon dette repoet
+1. Last ned og pakk ut `.zip`-filen (eller klon repoet)
 2. Gå til `chrome://extensions`
 3. Slå på «Utviklermodus» øverst til høyre
 4. Klikk «Last inn upakket»
-5. Velg prosjektmappen
+5. Velg den utpakkede mappen
 
 ### Forutsetninger
 
-Du må være innlogget på [app.dele.no](https://app.dele.no) i samme nettleser. Utvidelsen leser innloggingen din derfra.
+Du må være innlogget på [app.dele.no](https://app.dele.no) i samme nettleser. Utvidelsen leser innloggingen din derfra. Første synkronisering kan ta 1-2 minutter avhengig av antall reservasjoner.
 
 ## Hvordan det fungerer
 

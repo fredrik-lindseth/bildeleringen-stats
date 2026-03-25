@@ -1,6 +1,6 @@
-*.zip
 *.xpi
 *.crx
+dist/
 web-ext-artifacts/
 node_modules/
 .DS_Store
