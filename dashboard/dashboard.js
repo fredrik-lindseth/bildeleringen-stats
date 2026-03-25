@@ -27,7 +27,15 @@ import {
 
 import { storage } from "../lib/browser-polyfill.js";
 
-import { totalCO2, monthlyCO2 } from "../lib/co2.js";
+import { totalCO2, monthlyCO2, co2Comparison } from "../lib/co2.js";
+
+import {
+  TRANSPORT_MODES,
+  loadTransportData,
+  saveTransportData,
+  transportSummary,
+  TRANSPORT_METHOD,
+} from "../lib/transport.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -906,6 +914,286 @@ function renderClimate(reservations) {
   }
 }
 
+// ---------- Rendering: Section 8 — Min transport ----------
+
+let transportYear = null;
+
+function getTransportYears(reservations) {
+  const years = new Set();
+  for (const r of filterValid(reservations)) {
+    years.add(new Date(r.start).getFullYear());
+  }
+  return [...years].sort((a, b) => b - a);
+}
+
+function buildTransportForm(year, savedData) {
+  const container = $("transport-fields");
+  container.innerHTML = "";
+  const yearData = (savedData && savedData[year]) || {};
+
+  for (const [mode, definition] of Object.entries(TRANSPORT_MODES)) {
+    const modeData = yearData[mode] || {};
+    const isNarrow = definition.fields.length <= 1;
+    const row = document.createElement("div");
+    row.className = `transport-row${isNarrow ? " transport-row--narrow" : ""}`;
+
+    const label = document.createElement("span");
+    label.className = "transport-row__label";
+    label.textContent = definition.label;
+    row.appendChild(label);
+
+    for (const field of definition.fields) {
+      const input = document.createElement("input");
+      input.type = field.type;
+      input.name = `${mode}_${field.key}`;
+      input.placeholder = field.label;
+      input.min = "0";
+      input.step = "any";
+      if (modeData[field.key] != null && modeData[field.key] !== 0) {
+        input.value = modeData[field.key];
+      }
+      row.appendChild(input);
+    }
+
+    container.appendChild(row);
+  }
+}
+
+function getSharingStatsForYear(reservations, year) {
+  const yearRes = reservations.filter(
+    (r) => new Date(r.start).getFullYear() === year
+  );
+
+  const valid = filterValid(yearRes);
+  const driven = filterDriven(yearRes);
+
+  const cost = valid.reduce((sum, r) => sum + (r.price?.total || 0), 0);
+  const km = driven.reduce((sum, r) => sum + (r.drivenKm || 0), 0);
+  const trips = valid.length;
+
+  const co2Stats = totalCO2(yearRes);
+  const co2Kg = co2Stats ? co2Stats.totalKg : 0;
+
+  return { cost, co2Kg, km, trips };
+}
+
+const TRANSPORT_CHART_COLORS = {
+  bildeling: "--color-chart-1",
+  taxi: "--color-chart-2",
+  leiebil: "--color-chart-3",
+  buss: "--color-chart-4",
+  fly: "--color-chart-5",
+  sykkel: "--color-text-tertiary",
+};
+
+async function renderTransport(reservations) {
+  const years = getTransportYears(reservations);
+  if (years.length === 0) return;
+
+  // Build year selector
+  const select = $("transport-year");
+  select.innerHTML = "";
+  for (const y of years) {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y;
+    select.appendChild(opt);
+  }
+
+  // Default to current or most recent year
+  if (!transportYear || !years.includes(transportYear)) {
+    transportYear = years[0];
+  }
+  select.value = transportYear;
+
+  // Load saved transport data
+  const savedData = await loadTransportData(storage);
+
+  // Build form
+  buildTransportForm(transportYear, savedData);
+
+  // Render summary if data exists
+  renderTransportSummary(reservations, savedData, transportYear);
+
+  // Year change handler
+  select.onchange = async () => {
+    transportYear = Number(select.value);
+    const freshData = await loadTransportData(storage);
+    buildTransportForm(transportYear, freshData);
+    renderTransportSummary(reservations, freshData, transportYear);
+  };
+
+  // Form submit handler
+  $("transport-form").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const freshData = await loadTransportData(storage);
+    const yearData = {};
+
+    for (const [mode, definition] of Object.entries(TRANSPORT_MODES)) {
+      const modeData = {};
+      for (const field of definition.fields) {
+        const input = document.querySelector(`[name="${mode}_${field.key}"]`);
+        if (input && input.value !== "") {
+          modeData[field.key] = Number(input.value);
+        }
+      }
+      if (Object.keys(modeData).length > 0) {
+        yearData[mode] = modeData;
+      }
+    }
+
+    freshData[transportYear] = yearData;
+    await saveTransportData(storage, freshData);
+
+    // Show save status
+    const status = $("transport-save-status");
+    status.textContent = "Lagret!";
+    setTimeout(() => { status.textContent = ""; }, 2000);
+
+    // Re-render summary
+    renderTransportSummary(reservations, freshData, transportYear);
+  };
+}
+
+function renderTransportSummary(reservations, savedData, year) {
+  const yearData = (savedData && savedData[year]) || {};
+  const sharingStats = getSharingStatsForYear(reservations, year);
+  const summary = transportSummary(yearData, sharingStats);
+
+  // Check if there is any data beyond bildeling
+  const hasOtherModes = Object.keys(summary.modes).some((k) => k !== "bildeling");
+  const hasBildeling = summary.modes.bildeling && summary.modes.bildeling.cost > 0;
+
+  if (!hasOtherModes && !hasBildeling) {
+    $("transport-summary").hidden = true;
+    return;
+  }
+
+  $("transport-summary").hidden = false;
+
+  // Summary cards
+  setText("transport-total-cost", formatNOK.format(summary.totals.cost));
+  setText(
+    "transport-total-co2",
+    `${formatKm.format(Math.round(summary.totals.co2Kg))} kg`
+  );
+
+  if (summary.totals.cost > 0 && summary.modes.bildeling) {
+    const pct = Math.round(
+      (summary.modes.bildeling.cost / summary.totals.cost) * 100
+    );
+    setText("transport-sharing-pct", `${pct}%`);
+  } else {
+    setText("transport-sharing-pct", "\u2013");
+  }
+
+  // Sort modes by cost descending for charts and table
+  const sortedModes = Object.entries(summary.modes)
+    .filter(([, m]) => m.cost > 0 || m.co2Kg > 0)
+    .sort(([, a], [, b]) => b.cost - a.cost);
+
+  // Cost donut chart
+  destroyChart("transportCost");
+  if (sortedModes.some(([, m]) => m.cost > 0)) {
+    const costEntries = sortedModes.filter(([, m]) => m.cost > 0);
+    charts.transportCost = new Chart($("transport-cost-chart"), {
+      type: "doughnut",
+      data: {
+        labels: costEntries.map(([, m]) => m.label),
+        datasets: [
+          {
+            data: costEntries.map(([, m]) => m.cost),
+            backgroundColor: costEntries.map(([key]) =>
+              cssVar(TRANSPORT_CHART_COLORS[key] || "--color-chart-1")
+            ),
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "right" },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const val = formatNOK.format(ctx.parsed);
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = Math.round((ctx.parsed / total) * 100);
+                return `${ctx.label}: ${val} (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // CO2 donut chart
+  destroyChart("transportCO2");
+  if (sortedModes.some(([, m]) => m.co2Kg > 0)) {
+    const co2Entries = sortedModes.filter(([, m]) => m.co2Kg > 0);
+    charts.transportCO2 = new Chart($("transport-co2-chart"), {
+      type: "doughnut",
+      data: {
+        labels: co2Entries.map(([, m]) => m.label),
+        datasets: [
+          {
+            data: co2Entries.map(([, m]) => Math.round(m.co2Kg)),
+            backgroundColor: co2Entries.map(([key]) =>
+              cssVar(TRANSPORT_CHART_COLORS[key] || "--color-chart-1")
+            ),
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "right" },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = Math.round((ctx.parsed / total) * 100);
+                return `${ctx.label}: ${ctx.parsed} kg (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // Detail table — sorted by cost descending
+  const tableEl = $("transport-table");
+  tableEl.innerHTML = "";
+  for (const [, mode] of sortedModes) {
+    const row = document.createElement("div");
+    row.className = "category-row";
+    row.innerHTML = `
+      <span class="category-row__name">${escapeHtml(mode.label)}</span>
+      <span class="category-row__stat">${formatNOK.format(mode.cost)}</span>
+      <span class="category-row__stat">${formatKm.format(Math.round(mode.co2Kg))} kg</span>
+      <span class="category-row__stat">${formatKm.format(mode.km)} km</span>
+    `;
+    tableEl.appendChild(row);
+  }
+
+  // Methodology detail
+  const methodDetail = $("transport-method-detail");
+  if (methodDetail) {
+    const sourcesHtml = TRANSPORT_METHOD.sources
+      .map((s) => `<li>${escapeHtml(s)}</li>`)
+      .join("");
+    methodDetail.innerHTML = `
+      <p>${escapeHtml(TRANSPORT_METHOD.note)}</p>
+      <p style="margin-top: 8px;"><strong>Kilder:</strong></p>
+      <ul style="margin-left: 16px; margin-top: 4px;">${sourcesHtml}</ul>
+      <p style="margin-top: 8px;">Bildeling-data hentes automatisk fra dele.no. Annen transport registreres manuelt.</p>
+    `;
+  }
+}
+
 // ---------- Utility ----------
 
 function escapeHtml(str) {
@@ -978,6 +1266,7 @@ async function init() {
   renderOwnership(allReservations);
   await renderCategories(allReservations);
   renderClimate(allReservations);
+  await renderTransport(allReservations);
 
   showMain();
 }
@@ -1005,6 +1294,7 @@ syncBtn.addEventListener("click", async () => {
     renderOwnership(allReservations);
     await renderCategories(allReservations);
     renderClimate(allReservations);
+    await renderTransport(allReservations);
 
     showMain();
   } else {
