@@ -27,7 +27,7 @@ import {
 
 import { storage } from "../lib/browser-polyfill.js";
 
-import { totalCO2, co2Comparison, monthlyCO2 } from "../lib/co2.js";
+import { totalCO2, co2Comparison, monthlyCO2, CO2_METHOD } from "../lib/co2.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -722,6 +722,19 @@ function renderOwnership(reservations) {
   noteEl.textContent =
     `Estimat basert på din mest brukte bilkategori (${categoryName}) og Volvo EX C40 2026. ` +
     `Eierkostnader inkluderer verditap, forsikring, årsavgift, vedlikehold, parkering og drivstoff/strøm.`;
+
+  // Ownership methodology detail
+  const ownershipMethodDetail = $("ownership-method-detail");
+  if (ownershipMethodDetail && result) {
+    const bd = result.breakdownOwnership;
+    ownershipMethodDetail.innerHTML = `
+      <p><strong>Eierkostnader (${result.category}, per \u00e5r):</strong></p>
+      <p><code>Verditap: ${formatNOK.format(bd.depreciation)} + Forsikring: ${formatNOK.format(bd.insurance)} + Avgift: ${formatNOK.format(bd.tax)} + Vedlikehold: ${formatNOK.format(bd.maintenance)} + Parkering: ${formatNOK.format(bd.parking)} + Drivstoff: ${formatNOK.format(bd.fuel)}</code></p>
+      <p><code>= ${formatNOK.format(result.ownershipCost)}</code></p>
+      <p style="margin-top: 4px;"><strong>Bildeling:</strong> Sum av alle dine faktiske kostnader, annualisert: <code>${formatNOK.format(result.sharingCost)}</code></p>
+      <p style="margin-top: 8px;">Eierkostnader er estimater basert p\u00e5 norske gjennomsnitt (NAF, OFV). Bildeleforbruk er dine faktiske kostnader fra dele.no.</p>
+    `;
+  }
 }
 
 // ---------- Rendering: Section 6 — Turkategorier ----------
@@ -843,11 +856,23 @@ function renderClimate(reservations) {
 
   const verdictEl = $("co2-verdict");
   if (comparison.savedKg > 0) {
-    verdictEl.textContent = `Du sparer ${formatKg(comparison.savedKg)} kg CO\u2082 per \u00e5r med bildeling`;
+    verdictEl.textContent = `Dine turer slapp ut ${formatKg(comparison.savedKg)} kg CO\u2082 mindre enn tilsvarende i gjennomsnittlig privatbil`;
     verdictEl.className = "comparison__verdict comparison__verdict--saving";
   } else {
-    verdictEl.textContent = `Bildeling gir ${formatKg(Math.abs(comparison.savedKg))} kg mer CO\u2082 per \u00e5r`;
+    verdictEl.textContent = `Dine turer slapp ut ${formatKg(Math.abs(comparison.savedKg))} kg CO\u2082 mer enn tilsvarende i gjennomsnittlig privatbil`;
     verdictEl.className = "comparison__verdict comparison__verdict--more";
+  }
+
+  // Methodology detail
+  const methodDetail = $("co2-method-detail");
+  if (methodDetail && comparison) {
+    methodDetail.innerHTML = `
+      <p><strong>Utregning:</strong></p>
+      <p>Dine turer: <code>${formatKm.format(comparison.totalKm)} km \u00d7 ${Math.round(comparison.avgGPerKm)} g/km = ${formatKm.format(Math.round(comparison.sharingCO2Kg))} kg CO\u2082</code></p>
+      <p>Privatbil: <code>${formatKm.format(comparison.totalKm)} km \u00d7 ${comparison.fleetAvgGPerKm} g/km = ${formatKm.format(Math.round(comparison.privateCO2Kg))} kg CO\u2082</code></p>
+      <p>Differanse: <code>${formatKm.format(Math.round(comparison.savedKg))} kg CO\u2082</code></p>
+      <p style="margin-top: 8px;">${CO2_METHOD.note}</p>
+    `;
   }
 
   // Monthly chart
@@ -990,6 +1015,49 @@ syncBtn.addEventListener("click", async () => {
     showMain();
   } else {
     showEmpty();
+  }
+});
+
+// ---------- PNG Export ----------
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".btn--export");
+  if (!btn) return;
+
+  const section = btn.closest(".section");
+  if (!section) return;
+
+  btn.disabled = true;
+  btn.style.opacity = "0.5";
+
+  try {
+    const canvas = await html2canvas(section, {
+      backgroundColor: cssVar("--color-bg"),
+      scale: 2,
+    });
+
+    const link = document.createElement("a");
+    link.download = `bildeleringen-${section.id}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  } catch (err) {
+    console.error("Export failed:", err);
+  }
+
+  btn.disabled = false;
+  btn.style.opacity = "";
+});
+
+// ---------- Methodology Toggles ----------
+
+document.addEventListener("click", (e) => {
+  const toggle = e.target.closest(".method-toggle");
+  if (!toggle) return;
+  const detail = toggle.nextElementSibling;
+  if (detail) {
+    const open = !detail.hidden;
+    detail.hidden = open;
+    toggle.textContent = open ? "Slik beregner vi \u25b8" : "Slik beregner vi \u25be";
   }
 });
 
