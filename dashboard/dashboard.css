@@ -464,6 +464,20 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* ---- Yearly rows ---- */
+.yearly-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 2px 0;
+}
+
+.yearly-row span:first-child {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
 /* ---- Ranked list ---- */
 .ranked-list {
   list-style: none;
