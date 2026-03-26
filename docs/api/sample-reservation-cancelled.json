@@ -1,0 +1,237 @@
+{
+  "id": "29842a38-a3a8-42e1-b557-402b4f7dc4c5",
+  "organizationId": "3212bcbe-8e34-4c28-9439-a44e6d5cf9c0",
+  "organizationName": "Bildeleringen",
+  "drivenKm": 0,
+  "membershipId": "00000000-0000-0000-0000-000000000001",
+  "start": "2026-01-30T12:00:00",
+  "end": "2026-01-30T21:00:00",
+  "started": null,
+  "ended": null,
+  "created": "2026-01-29T09:29:53.104341",
+  "lastRide": null,
+  "lastLogout": null,
+  "effectiveStart": "2026-01-30T12:00:00",
+  "effectiveEnd": "2026-01-30T21:00:00",
+  "pool": [
+    {
+      "id": "0ed8ed48-44b5-460a-97b4-394e6875516f",
+      "organizationId": "3212bcbe-8e34-4c28-9439-a44e6d5cf9c0",
+      "organizationName": "Bildeleringen",
+      "licensePlate": "SX29722",
+      "carNumber": "988",
+      "supportPhoneNumber": "+4753699010",
+      "iconUrl": "/car-icons/bildeleringen/toyota-corolla-black.webp",
+      "model": "Toyota Corolla STV",
+      "about": "Antall seter: 5.\n\n",
+      "parkingDescription": null,
+      "chargingBay": null,
+      "category": "Stasjonsvogn",
+      "fuelInstructions": null,
+      "roadsideAssistancePhoneNo": "+4780033105",
+      "roadsideAssistanceAbroadPhoneNo": "+4722717105",
+      "chargingCableType": null,
+      "properties": [
+        {
+          "id": "43ed377c-df71-4715-b3fd-65900404e5e0",
+          "groupId": "e4d16fa4-fcfd-4d6a-aa6c-daed6a619bee",
+          "group": "Drivstoff",
+          "groupKey": "FUEL_TYPE",
+          "name": "Bensin",
+          "key": "GASOLINE"
+        },
+        {
+          "id": "24089205-a21d-417b-84b0-d67c07f187a5",
+          "groupId": "945f539f-dcbf-4fa9-a53b-1f14a05e8a78",
+          "group": "Girkasse",
+          "groupKey": "TRANSMISSION",
+          "name": "Automatgir",
+          "key": "AUTOMATIC"
+        },
+        {
+          "id": "14f09604-15b3-4f08-b67f-60fae7e5415a",
+          "groupId": "5f461b70-6c1c-4c51-88f8-5850358620e6",
+          "group": "Hjuldrift",
+          "groupKey": "DRIVETRAIN",
+          "name": "Forhjulstrekk",
+          "key": "FWD"
+        },
+        {
+          "id": "9916a0b1-6874-4859-be7a-3d7913d774e0",
+          "groupId": "abd92946-2c62-42e4-9da6-1f7d69e0b791",
+          "group": "Dyr",
+          "groupKey": null,
+          "name": "Dyrefri",
+          "key": null
+        },
+        {
+          "id": "d644d3e6-4e77-43f3-818b-7f11aa299084",
+          "groupId": "6a8fbe59-3ec1-4824-a363-0c586b88f2c6",
+          "group": "Tilleggsutstyr",
+          "groupKey": null,
+          "name": "Barnepute",
+          "key": null
+        }
+      ],
+      "fuelCards": [
+        {
+          "name": "Circle K",
+          "pin": "0000"
+        },
+        {
+          "name": "ST1",
+          "pin": "0000"
+        }
+      ],
+      "damages": [
+        {
+          "reportedOnReservationId": "eb66fc32-c678-41f1-ac8d-6efe94b97f85",
+          "description": "Støtfanger foran underside høyre, riper",
+          "pictures": [
+            {
+              "url": "/api/pictures/damage-pictures/382053a9-6cfe-4989-9546-9c32a0303b9c"
+            }
+          ]
+        },
+        {
+          "reportedOnReservationId": "353bb1e8-0b0d-471c-9df6-f1127ce3f232",
+          "description": "Bakdør venstre, riper",
+          "pictures": [
+            {
+              "url": "/api/pictures/damage-pictures/bcc96557-5020-421a-8873-b056d0dabb83"
+            }
+          ]
+        }
+      ],
+      "fuelLevel": null,
+      "state": "AVAILABLE"
+    }
+  ],
+  "car": {
+    "id": "0ed8ed48-44b5-460a-97b4-394e6875516f",
+    "organizationId": "3212bcbe-8e34-4c28-9439-a44e6d5cf9c0",
+    "organizationName": "Bildeleringen",
+    "licensePlate": "SX29722",
+    "carNumber": "988",
+    "supportPhoneNumber": "+4753699010",
+    "iconUrl": "/car-icons/bildeleringen/toyota-corolla-black.webp",
+    "model": "Toyota Corolla STV",
+    "about": "Antall seter: 5.\n\n",
+    "parkingDescription": null,
+    "chargingBay": null,
+    "category": "Stasjonsvogn",
+    "fuelInstructions": null,
+    "roadsideAssistancePhoneNo": "+4780033105",
+    "roadsideAssistanceAbroadPhoneNo": "+4722717105",
+    "chargingCableType": null,
+    "properties": [
+      {
+        "id": "43ed377c-df71-4715-b3fd-65900404e5e0",
+        "groupId": "e4d16fa4-fcfd-4d6a-aa6c-daed6a619bee",
+        "group": "Drivstoff",
+        "groupKey": "FUEL_TYPE",
+        "name": "Bensin",
+        "key": "GASOLINE"
+      },
+      {
+        "id": "24089205-a21d-417b-84b0-d67c07f187a5",
+        "groupId": "945f539f-dcbf-4fa9-a53b-1f14a05e8a78",
+        "group": "Girkasse",
+        "groupKey": "TRANSMISSION",
+        "name": "Automatgir",
+        "key": "AUTOMATIC"
+      },
+      {
+        "id": "14f09604-15b3-4f08-b67f-60fae7e5415a",
+        "groupId": "5f461b70-6c1c-4c51-88f8-5850358620e6",
+        "group": "Hjuldrift",
+        "groupKey": "DRIVETRAIN",
+        "name": "Forhjulstrekk",
+        "key": "FWD"
+      },
+      {
+        "id": "9916a0b1-6874-4859-be7a-3d7913d774e0",
+        "groupId": "abd92946-2c62-42e4-9da6-1f7d69e0b791",
+        "group": "Dyr",
+        "groupKey": null,
+        "name": "Dyrefri",
+        "key": null
+      },
+      {
+        "id": "d644d3e6-4e77-43f3-818b-7f11aa299084",
+        "groupId": "6a8fbe59-3ec1-4824-a363-0c586b88f2c6",
+        "group": "Tilleggsutstyr",
+        "groupKey": null,
+        "name": "Barnepute",
+        "key": null
+      }
+    ],
+    "fuelCards": [
+      {
+        "name": "Circle K",
+        "pin": "0000"
+      },
+      {
+        "name": "ST1",
+        "pin": "0000"
+      }
+    ],
+    "damages": [
+      {
+        "reportedOnReservationId": "eb66fc32-c678-41f1-ac8d-6efe94b97f85",
+        "description": "Støtfanger foran underside høyre, riper",
+        "pictures": [
+          {
+            "url": "/api/pictures/damage-pictures/382053a9-6cfe-4989-9546-9c32a0303b9c"
+          }
+        ]
+      },
+      {
+        "reportedOnReservationId": "353bb1e8-0b0d-471c-9df6-f1127ce3f232",
+        "description": "Bakdør venstre, riper",
+        "pictures": [
+          {
+            "url": "/api/pictures/damage-pictures/bcc96557-5020-421a-8873-b056d0dabb83"
+          }
+        ]
+      }
+    ],
+    "fuelLevel": null
+  },
+  "iconUrl": "/car-icons/bildeleringen/toyota-corolla-black.webp",
+  "reservationNumber": "1581566",
+  "price": {
+    "currency": "Kr",
+    "total": 0,
+    "lines": []
+  },
+  "superDamageWaiver": true,
+  "carWasDamaged": false,
+  "invoiced": true,
+  "freeIfNoTrips": false,
+  "noTrips": true,
+  "canStartNow": false,
+  "isStillDriving": false,
+  "state": "CANCELED",
+  "notes": "Eksempel turkategori",
+  "reservedBy": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "name": "Ola Nordmann",
+    "email": "ola@example.com",
+    "phoneNo": "+4700000000",
+    "partners": [],
+    "oidcId": null,
+    "driversLicenseValid": true,
+    "verifiedSsn": false,
+    "notificationsPermitted": true
+  },
+  "invoiceLines": [],
+  "location": {
+    "id": "bac2090b-e3cb-42d5-b292-c64b534bb25c",
+    "description": "Gateparkering ved Lægdesvingen 25.",
+    "name": "Lægdesvingen",
+    "canDialToOpen": false,
+    "hasDialToOpen": false
+  },
+  "canceled": "2026-01-29T09:30:08.603951"
+}
