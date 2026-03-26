@@ -7,3 +7,10 @@ node_modules/
 
 # Research PDFs (large, not tracked)
 docs/research/*.pdf
+
+# Claude Code
+.claude/
+
+# Local debug/data files
+*.pdf
+bildeleringen-*.json
