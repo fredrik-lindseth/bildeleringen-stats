@@ -1,51 +1,66 @@
 # Bildeleringen Stats — Prosjektkonvensjoner
 
-## Arkitektur
-
-Nettleserutvidelse (Manifest V3) for Firefox + Chrome. Ingen build-step.
-
-- `content.js` — kjører på `app.dele.no`, leser auth fra localStorage. Kan IKKE bruke ES modules.
-- `background.js` — ES module. Håndterer synkronisering, caching, meldinger.
-- `popup/` — ES module. Rask oversikt, åpnes fra utvidelsesikonet.
-- `dashboard/` — ES module. Fullstendig statistikk med Chart.js-grafer.
-- `summary/` — ES module. Årsoppsummering, egen mørk design.
-- `lib/` — Delte moduler:
-  - `api.js` — API-klient (paginering, retry, rate-limiting)
-  - `browser-polyfill.js` — Firefox/Chrome kompatibilitetslag
-  - `categories.js` — Turkategorisering med auto-forslag fra `notes`-feltet
-  - `chart-helpers.js` — Chart.js wrappere med CSS-variabel-farger
-  - `co2.js` — CO₂-beregning per drivstofftype og bilkategori
-  - `formatters.js` — Delte formateringsfunksjoner (NOK, dato)
-  - `ownership-cost.js` — Eierkostnadsmodell (kategoribasert + Volvo EX C40 2026)
-  - `stats.js` — Statistikkberegninger (rene funksjoner)
-  - `transport.js` — Transportkalkulator (taxi, leiebil, egen bil, buss, fly, sykkel)
-- `vendor/chart.min.js` — Chart.js UMD, lastes via `<script>` tag i HTML.
-
 ## Regler
 
-- **Ingen build-step.** Vanilla JS, HTML, CSS. Ingen bundler, transpiler, eller npm-avhengigheter.
-- **Alle farger via CSS custom properties i `:root`.** Ingen hardkodede hex/rgb-verdier utenfor `:root`.
-- **Mørk modus er påkrevd.** All UI må fungere i både lys og mørk modus (`prefers-color-scheme`).
-- **Norsk UI-tekst.** Alle brukervendte tekster på norsk.
+- **Ingen build-step.** Vanilla JS, HTML, CSS. Ingen bundler eller npm. Vendor-libs i `vendor/`.
+- **Alle farger via CSS custom properties i `:root`.** Ingen hardkodede hex/rgb utenfor `:root`. Maks 5 chart-farger (`--color-chart-1` til `--color-chart-5`) — legg til ny CSS-variabel før du bruker en 6. farge.
+- **Mørk modus er påkrevd.** All UI må fungere i lys og mørk modus (`prefers-color-scheme`). Nye CSS-variabler trenger dark mode override.
+- **Norsk UI-tekst.** Alt brukeren ser (labels, feilmeldinger, status) på norsk. Console.log kan være engelsk.
 - **ES modules overalt** — unntatt `content.js` (content scripts støtter ikke modules).
-- **Stats-funksjoner er rene.** `lib/stats.js`, `lib/co2.js`, `lib/ownership-cost.js` har ingen sideeffekter.
-- **Turkategorier lagres separat** i `browser.storage.local` under nøkkel `tripCategories`, ikke i reservasjonsdata.
-- **Estimater er tydelig merket.** Eierkostnader og CO₂ er estimater basert på norske gjennomsnitt.
-- **Cross-browser:** `typeof browser !== "undefined" ? browser : chrome` for API-tilgang.
+- **Stats-funksjoner er rene.** `lib/stats.js`, `lib/co2.js`, `lib/ownership-cost.js` har ingen sideeffekter — tar data inn, returnerer resultater. Ikke kall browser-API-er eller storage fra disse.
+- **Vis 'Slik beregner vi'-knapp med kilder** ved alle estimater (eierkostnader, CO₂). Prefix estimerte tall med "ca." eller "~".
+- **Cross-browser:** `typeof browser !== "undefined" ? browser : chrome` for API-tilgang. `lib/browser-polyfill.js` eksporterer `browserAPI` og `storage`.
 
-## Testing
+## API-feltnavn (kritisk)
 
-Last inn som midlertidig utvidelse:
+Reservasjonsobjekter fra dele.no bruker disse feltnavnene — IKKE det du kanskje ville gjettet:
 
-- **Firefox:** `about:debugging#/runtime/this-firefox` → «Last inn midlertidig tillegg» → velg `manifest.json`
-- **Chrome:** `chrome://extensions` → Utviklermodus → «Last inn upakket» → velg prosjektmappen
+| Felt | Type | Beskrivelse |
+|---|---|---|
+| `price.total` | number | Kostnad i NOK (IKKE `totalPrice`) |
+| `price.lines[]` | array | Prislinjer: startavgift, timepris, km-pris, gebyr |
+| `drivenKm` | number/null | Kjørte km (IKKE `distance`) |
+| `car.model` | string | Bilmodell (IKKE `vehicleName`) |
+| `car.category` | string | Småbil / Minibil / Kombi / Stasjonsvogn / SUV / Varebil |
+| `car.properties[]` | array | `groupKey: "FUEL_TYPE"` → `name: "Bensin"/"Diesel"/"Elektrisitet"` |
+| `canceled` | datetime/null | null = ikke avbestilt (IKKE `status`) |
+| `noTrips` | boolean | Booket men ikke kjørt. Kan ha kostnad > 0 (gebyr). |
+| `notes` | string/null | Brukerens turnotater — brukes til auto-kategorisering |
+| `start`, `end` | datetime | ISO-strenger |
+| `created` | datetime | Opprettelsestidspunkt (for booking lead time) |
 
-Du må være innlogget på `app.dele.no` for å teste med ekte data.
+Full OpenAPI-spec i `docs/api/openapi.json`. Anonymiserte eksempler i `docs/api/sample-*.json`.
 
-## API
+## Filtrering
 
-Utvidelsen bruker dele.no sitt interne API:
+Alle stats-funksjoner bruker én av to filtre:
 
-- `GET /api/reservations/historic?page=N&size=100&sort=start,desc&membershipId=X` — paginert historikk
-- `GET /api/reservations/{id}` — reservasjonsdetaljer
-- Auth via `authorization`-header (token fra localStorage)
+- **`filterValid()`** — `canceled == null` OG `price.total != null`. Inkluderer noTrips (bruker betalte). Brukes av: `costStats()`, `monthlyCosts()`, `yearlyCosts()`.
+- **`filterDriven()`** — `filterValid()` OG `!noTrips`. Kun faktisk kjøring. Brukes av: `usagePatterns()`, `mileageStats()`, `totalCO2()`, `estimateOwnershipCost()`.
+
+Bruk feil filter → feil tall uten synlig feil.
+
+## Storage-nøkler
+
+Alt i `browser.storage.local`:
+
+| Nøkkel | Struktur | Oppdateres av |
+|---|---|---|
+| `reservations` | Array av fulle reservasjonsobjekter | background.js (sync) |
+| `lastSync` | Timestamp (ms) | background.js (sync) |
+| `tripCategories` | `{ reservationId: categoryKey }` | dashboard (bruker-input) |
+| `transportData` | `{ "2025": { taxi: {...}, buss: {...} } }` | dashboard (bruker-input) |
+
+Reservasjoner og lastSync er API-data — rør dem ikke direkte. tripCategories og transportData er bruker-data — slett aldri ved sync.
+
+## API-regler
+
+- **Rate-limiting:** `lib/api.js` legger inn 50ms delay mellom kall. 429-svar → eksponentiell backoff (2^attempt × 1000ms). Endre ikke uten grunn.
+- **Sync-intervall:** Maks én gang per time (`SYNC_INTERVAL_MS`). Manuell sync trigges av brukeren.
+- **Inkrementell sync:** Henter kun nye reservasjoner (sammenligner ID-er mot cache). Eksisterende data oppdateres IKKE ved re-sync.
+- **Token:** Kan utløpe (401). background.js ber content script om nytt token. Feiler stille hvis dele.no-fane er lukket.
+
+Endepunkter:
+- `GET /api/reservations/historic?page=0&size=100&sort=start,desc&membershipId=<UUID>`
+- `GET /api/reservations/{id}`
+- Auth: `authorization`-header med bearer token fra `localStorage("persist:data")` på app.dele.no
