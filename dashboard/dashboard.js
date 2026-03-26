@@ -942,16 +942,30 @@ function buildTransportForm(year, savedData) {
     row.appendChild(label);
 
     for (const field of definition.fields) {
-      const input = document.createElement("input");
-      input.type = field.type;
-      input.name = `${mode}_${field.key}`;
-      input.placeholder = field.label;
-      input.min = "0";
-      input.step = "any";
-      if (modeData[field.key] != null && modeData[field.key] !== 0) {
-        input.value = modeData[field.key];
+      if (field.type === "select") {
+        const select = document.createElement("select");
+        select.name = `${mode}_${field.key}`;
+        select.className = "transport-select";
+        for (const opt of field.options) {
+          const option = document.createElement("option");
+          option.value = opt.value;
+          option.textContent = opt.label;
+          if (modeData[field.key] === opt.value) option.selected = true;
+          select.appendChild(option);
+        }
+        row.appendChild(select);
+      } else {
+        const input = document.createElement("input");
+        input.type = field.type;
+        input.name = `${mode}_${field.key}`;
+        input.placeholder = field.label;
+        input.min = "0";
+        input.step = "any";
+        if (modeData[field.key] != null && modeData[field.key] !== 0) {
+          input.value = modeData[field.key];
+        }
+        row.appendChild(input);
       }
-      row.appendChild(input);
     }
 
     container.appendChild(row);
@@ -980,6 +994,7 @@ const TRANSPORT_CHART_COLORS = {
   bildeling: "--color-chart-1",
   taxi: "--color-chart-2",
   leiebil: "--color-chart-3",
+  egenbil: "--color-secondary",
   buss: "--color-chart-4",
   fly: "--color-chart-5",
   sykkel: "--color-text-tertiary",
@@ -1032,9 +1047,9 @@ async function renderTransport(reservations) {
     for (const [mode, definition] of Object.entries(TRANSPORT_MODES)) {
       const modeData = {};
       for (const field of definition.fields) {
-        const input = document.querySelector(`[name="${mode}_${field.key}"]`);
-        if (input && input.value !== "") {
-          modeData[field.key] = Number(input.value);
+        const el = document.querySelector(`[name="${mode}_${field.key}"]`);
+        if (el && el.value !== "") {
+          modeData[field.key] = field.type === "select" ? el.value : Number(el.value);
         }
       }
       if (Object.keys(modeData).length > 0) {
