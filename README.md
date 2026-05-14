@@ -2,6 +2,8 @@
 
 Nettleserutvidelse som gir deg oversikt over ditt bildeleforbruk, transportkostnader og klimaavtrykk. For medlemmer av [Bildeleringen / dele.no](https://dele.no).
 
+> Dette prosjektet er ikke tilknyttet Bildeleringen / Dele AS. Det er laget av en ivrig bruker som ville ha bedre innsikt i eget bildeleforbruk.
+
 ## Skjermbilder
 
 ### Kostnader
@@ -30,10 +32,11 @@ Nettleserutvidelse som gir deg oversikt over ditt bildeleforbruk, transportkostn
 
 ## Funksjoner
 
-- **Popup** — månedlig forbruk, snittpris, mest brukte bil, besparelse og CO₂
+- **Popup** — månedlig forbruk, snittpris, mest brukte bil og besparelse
 - **Dashboard** — fullstendig statistikk med grafer:
   - Kostnader (måned, år, per tur, per km)
   - Bruksmønster (heatmap, turer per måned, mest brukte biler)
+  - Bookingmønster (forhåndsvarsel, topp stasjoner, andel siste-liten)
   - Kilometer (distanse, per bil, lengste tur)
   - Trender (år-over-år, rullerende snitt, sesong)
   - Bilregnestykket (bildeling vs. bileierskap, inkl. Volvo EX C40 2026)
@@ -68,6 +71,10 @@ All data lagres lokalt i nettleseren din. Eneste nettverkstrafikk er API-kall ti
 ## Estimater
 
 Eierkostnader og CO₂ er estimater basert på norske kilder (NAF, Miljødirektoratet, TØI). Klikk «Slik beregner vi» i dashboardet for utregning og kilder.
+
+## Varemerke
+
+Ikonet er basert på Dele AS sitt offisielle logo. Dele AS eier merket — utvidelsen er ikke tilknyttet eller godkjent av dem. Greit for privat sideloading. Skal du publisere en fork til Chrome Web Store eller AMO, lag ditt eget Dele-inspirerte symbol (samme lilla, `#51289D`, er fritt fram).
 
 ## Utvikling
 

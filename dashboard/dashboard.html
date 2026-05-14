@@ -11,6 +11,7 @@
     <div class="header__inner">
       <h1 class="header__title">Bildeleringen Stats</h1>
       <div class="header__actions">
+        <span id="data-summary" class="header__data-summary"></span>
         <span id="last-synced" class="header__sync-time"></span>
         <button id="summary-btn" class="btn btn--sync" type="button">Årsoppsummering</button>
         <button id="sync-btn" class="btn btn--sync" type="button">
@@ -29,6 +30,7 @@
     <div class="nav__inner">
       <a class="nav__link nav__link--active" href="#kostnader" data-section="kostnader">Kostnader</a>
       <a class="nav__link" href="#bruksmonster" data-section="bruksmonster">Bruksm&oslash;nster</a>
+      <a class="nav__link" href="#bookingmonster" data-section="bookingmonster">Bookingm&oslash;nster</a>
       <a class="nav__link" href="#kilometer" data-section="kilometer">Kilometer</a>
       <a class="nav__link" href="#trender" data-section="trender">Trender</a>
       <a class="nav__link" href="#bilregnestyket" data-section="bilregnestyket">Bilregnestykket</a>
@@ -148,7 +150,59 @@
       </div>
     </section>
 
-    <!-- Section 3: Kilometer -->
+    <!-- Section 3: Bookingmønster -->
+    <section class="section" id="bookingmonster">
+      <div class="section__header">
+        <h2 class="section__title">Bookingm&oslash;nster</h2>
+        <button class="btn btn--export" data-section="bookingmonster" title="Last ned som bilde">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 1v10M4 8l4 4 4-4M2 13h12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="booking-empty" class="empty-state empty-state--inline" hidden>
+        <p class="empty-state__text">Ikke nok data for bookingm&oslash;nster.</p>
+      </div>
+
+      <div id="booking-content">
+        <div class="cards cards--2">
+          <div class="card">
+            <span class="card__label">Snitt forh&aring;ndsvarsel</span>
+            <span class="card__value" id="booking-avg-lead">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Median forh&aring;ndsvarsel</span>
+            <span class="card__value" id="booking-median-lead">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Booket samme d&oslash;gn</span>
+            <span class="card__value" id="booking-short-notice">&ndash;</span>
+          </div>
+          <div class="card">
+            <span class="card__label">Unike stasjoner</span>
+            <span class="card__value" id="booking-unique-stations">&ndash;</span>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <h3 class="chart-container__title">N&aring;r booker du?</h3>
+          <canvas id="lead-time-chart"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h3 class="chart-container__title">Mest brukte stasjoner</h3>
+          <canvas id="top-stations-chart"></canvas>
+        </div>
+
+        <div class="method-block">
+          <button class="method-toggle" id="booking-method-toggle">Slik beregner vi &#9656;</button>
+          <div class="method-detail" id="booking-method-detail" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Kilometer -->
     <section class="section" id="kilometer">
       <div class="section__header">
         <h2 class="section__title">Kilometer</h2>
@@ -390,8 +444,11 @@
         <form id="transport-form" class="transport-form">
           <!-- JS will build rows for each transport mode -->
           <div id="transport-fields"></div>
-          <button type="submit" class="btn btn--save">Lagre</button>
-          <span id="transport-save-status" class="transport-save-status"></span>
+          <div class="transport-form__actions">
+            <button type="submit" class="btn btn--save">Lagre</button>
+            <button type="button" id="transport-reset" class="btn btn--reset">Null alt</button>
+            <span id="transport-save-status" class="transport-save-status"></span>
+          </div>
         </form>
       </div>
 
@@ -434,6 +491,55 @@
       </div>
     </section>
   </main>
+
+  <!-- Dev tools — kun synlig med ?dev=1 i URL. Ligger utenfor <main> slik at -->
+  <!-- panelet vises selv når dashbordet er i empty/login-state. -->
+  <aside class="main" id="devtools-wrapper" hidden>
+    <section class="section section--dev" id="devtools">
+      <div class="section__header">
+        <h2 class="section__title">Utviklerverkt&oslash;y</h2>
+      </div>
+
+      <p class="dev-warning">
+        Dette panelet er kun for utvikling. Det er synlig fordi
+        <code>?dev=1</code> er i URL-en.
+      </p>
+
+      <div class="cards cards--3">
+        <div class="card">
+          <span class="card__label">Reservasjoner i storage</span>
+          <span class="card__value" id="dev-count">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Sist synkronisert</span>
+          <span class="card__value" id="dev-last-sync">&ndash;</span>
+        </div>
+        <div class="card">
+          <span class="card__label">Storage-bruk</span>
+          <span class="card__value" id="dev-storage-size">&ndash;</span>
+        </div>
+      </div>
+
+      <div class="card card--list">
+        <span class="card__label">Sikkerhetskopi</span>
+        <p class="dev-help">Eksporter alle reservasjoner og synkroniseringstidspunkt som JSON, eller importer fra en tidligere eksport. Brukerdata (kategorier, transport) inkluderes ikke.</p>
+        <div class="dev-actions">
+          <button type="button" id="dev-export-btn" class="btn btn--save">Eksporter data</button>
+          <button type="button" id="dev-import-btn" class="btn btn--reset">Importer data</button>
+          <input type="file" id="dev-import-file" accept="application/json,.json" hidden>
+          <span id="dev-action-status" class="dev-status"></span>
+        </div>
+      </div>
+
+      <div class="card card--list">
+        <span class="card__label">Farlig sone</span>
+        <p class="dev-help">Sletter <code>reservations</code>, <code>lastSync</code>, <code>tripCategories</code>, <code>transportData</code> og <code>userKeywords</code> fra storage. Kan ikke angres.</p>
+        <div class="dev-actions">
+          <button type="button" id="dev-reset-btn" class="btn btn--danger">Nullstill alt</button>
+        </div>
+      </div>
+    </section>
+  </aside>
 
   <script src="../vendor/html2canvas.min.js"></script>
   <script src="../vendor/chart.min.js"></script>

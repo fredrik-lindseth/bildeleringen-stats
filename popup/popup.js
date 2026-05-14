@@ -2,7 +2,6 @@ import { currentMonthStats, monthlyCosts, usagePatterns } from "../lib/stats.js"
 import { createSparkline } from "../lib/chart-helpers.js";
 import { formatNOK, formatSyncTime } from "../lib/formatters.js";
 import { estimateOwnershipCost } from "../lib/ownership-cost.js";
-import { co2Comparison } from "../lib/co2.js";
 
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -28,7 +27,9 @@ const progressEl = document.getElementById("progress");
 const progressBar = document.getElementById("progress-bar");
 
 function showStatus(message, progress = null) {
+  statusEl.classList.remove("status--login");
   statusText.textContent = message;
+  removeStatusAction();
   statusEl.hidden = false;
 
   if (progress !== null) {
@@ -40,7 +41,37 @@ function showStatus(message, progress = null) {
   }
 }
 
+function showLoginRequired() {
+  statusEl.classList.add("status--login");
+  statusText.innerHTML = `<strong>Du må logge inn på Bildeleringen</strong><br>Vi henter dataene dine så snart du er innlogget.`;
+  removeStatusAction();
+
+  const action = document.createElement("a");
+  action.id = "status-action";
+  action.className = "status__action";
+  action.textContent = "Åpne app.dele.no →";
+  action.href = "https://app.dele.no";
+  action.target = "_blank";
+  action.rel = "noopener";
+  statusEl.appendChild(action);
+
+  progressEl.hidden = true;
+  progressBar.style.width = "0%";
+  statusEl.hidden = false;
+}
+
+function removeStatusAction() {
+  const existing = document.getElementById("status-action");
+  if (existing) existing.remove();
+}
+
+function isAuthError(error) {
+  return error === "NOT_LOGGED_IN" || error === "AUTH_EXPIRED";
+}
+
 function hideStatus() {
+  statusEl.classList.remove("status--login");
+  removeStatusAction();
   statusEl.hidden = true;
   progressEl.hidden = true;
 }
@@ -114,85 +145,140 @@ function renderStats(reservations) {
     savingsEl.textContent = "–";
   }
 
-  // CO2 saved this year
-  const yearData = reservations.filter(r => new Date(r.start).getFullYear() === currentYear);
-  const co2 = co2Comparison(yearData);
-  const co2El = document.getElementById("yearly-co2");
-  if (co2 && co2.savedKg > 0) {
-    co2El.textContent = `${Math.round(co2.savedKg)} kg`;
-  } else {
-    co2El.textContent = "–";
-  }
-
   statsSection.hidden = false;
 }
 
-async function sendMessage(msg) {
-  return browserAPI.runtime.sendMessage(msg);
+// Wrap sendMessage med timeout + tydelig feil. Background-scriptet kan være
+// sovende (MV3 event page) og bruke sekunder på å våkne, og noen ganger
+// svarer det aldri (bg-script crash, race etter reload, etc).
+async function sendMessage(msg, timeoutMs = 10000) {
+  return Promise.race([
+    browserAPI.runtime.sendMessage(msg),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`sendMessage timeout: ${msg.type}`)), timeoutMs)
+    ),
+  ]);
 }
 
 async function init() {
-  // 1. Check auth
-  const authStatus = await sendMessage({ type: "GET_AUTH_STATUS" });
-  if (!authStatus || !authStatus.hasAuth) {
-    showStatus("Logg inn på app.dele.no først");
+  // Vis "Laster…" som standard så popup aldri ser tom ut. hideStatus()
+  // kalles eksplisitt når vi har data å rendere.
+  showStatus("Laster…");
+
+  let authStatus;
+  try {
+    authStatus = await sendMessage({ type: "GET_AUTH_STATUS" });
+  } catch (e) {
+    console.error("[popup] GET_AUTH_STATUS feilet:", e);
+    showStatus("Kunne ikke kontakte utvidelsen. Prøv å åpne popup-en på nytt.");
+    return;
   }
 
-  // 2. Try to get cached data
-  const data = await sendMessage({ type: "GET_DATA" });
+  if (!authStatus || !authStatus.hasAuth) {
+    showLoginRequired();
+  }
+
+  let data;
+  try {
+    data = await sendMessage({ type: "GET_DATA" });
+  } catch (e) {
+    console.error("[popup] GET_DATA feilet:", e);
+    showStatus("Klarte ikke å lese lagrede data.");
+    return;
+  }
+
   if (data && data.reservations && data.reservations.length > 0) {
     hideStatus();
-    renderStats(data.reservations);
-    lastSyncedEl.textContent = formatSyncTime(data.lastSync);
-  } else if (authStatus && authStatus.hasAuth) {
-    // 3. No data but logged in — trigger sync
-    showStatus("Synkroniserer...");
-    syncBtn.disabled = true;
-    const result = await sendMessage({ type: "REQUEST_SYNC" });
-    syncBtn.disabled = false;
+    try {
+      renderStats(data.reservations);
+      lastSyncedEl.textContent = formatSyncTime(data.lastSync);
+    } catch (e) {
+      console.error("[popup] renderStats feilet:", e);
+      showStatus(`Feil ved opptegning: ${e.message}`);
+    }
+    return;
+  }
 
-    if (result && result.error) {
-      showStatus(
-        result.error === "NOT_LOGGED_IN" || result.error === "AUTH_EXPIRED"
-          ? "Logg inn på app.dele.no først"
-          : `Feil: ${result.error}`
-      );
-    } else if (result && result.count > 0) {
-      hideStatus();
+  if (!authStatus || !authStatus.hasAuth) return;
+
+  // Ingen data, men innlogget — start sync.
+  showStatus("Synkroniserer…");
+  syncBtn.disabled = true;
+
+  let result;
+  try {
+    // Sync kan ta 30+ sek for første gangs synk. Egen timeout for denne.
+    result = await sendMessage({ type: "REQUEST_SYNC" }, 120000);
+  } catch (e) {
+    console.error("[popup] REQUEST_SYNC feilet:", e);
+    showStatus(`Sync feilet: ${e.message}`);
+    syncBtn.disabled = false;
+    return;
+  }
+  syncBtn.disabled = false;
+
+  if (result && result.error) {
+    if (isAuthError(result.error)) {
+      showLoginRequired();
+    } else {
+      showStatus(`Feil: ${result.error}`);
+    }
+    return;
+  }
+
+  if (result && result.count > 0) {
+    hideStatus();
+    try {
       const freshData = await sendMessage({ type: "GET_DATA" });
       if (freshData && freshData.reservations) {
         renderStats(freshData.reservations);
         lastSyncedEl.textContent = formatSyncTime(freshData.lastSync);
       }
-    } else {
-      showStatus("Ingen data funnet");
+    } catch (e) {
+      console.error("[popup] freshData feilet:", e);
+      showStatus(`Feil: ${e.message}`);
     }
+    return;
   }
+
+  showStatus("Ingen data funnet");
 }
 
 // Sync button handler
 syncBtn.addEventListener("click", async () => {
   syncBtn.disabled = true;
-  showStatus("Synkroniserer...");
+  showStatus("Synkroniserer…");
 
-  const result = await sendMessage({ type: "REQUEST_SYNC", force: true });
-
+  let result;
+  try {
+    result = await sendMessage({ type: "REQUEST_SYNC", force: true }, 120000);
+  } catch (e) {
+    console.error("[popup] sync-knapp feilet:", e);
+    showStatus(`Sync feilet: ${e.message}`);
+    syncBtn.disabled = false;
+    return;
+  }
   syncBtn.disabled = false;
 
   if (result && result.error) {
-    showStatus(
-      result.error === "NOT_LOGGED_IN" || result.error === "AUTH_EXPIRED"
-        ? "Logg inn på app.dele.no først"
-        : `Feil: ${result.error}`
-    );
+    if (isAuthError(result.error)) {
+      showLoginRequired();
+    } else {
+      showStatus(`Feil: ${result.error}`);
+    }
     return;
   }
 
   hideStatus();
-  const freshData = await sendMessage({ type: "GET_DATA" });
-  if (freshData && freshData.reservations) {
-    renderStats(freshData.reservations);
-    lastSyncedEl.textContent = formatSyncTime(freshData.lastSync);
+  try {
+    const freshData = await sendMessage({ type: "GET_DATA" });
+    if (freshData && freshData.reservations) {
+      renderStats(freshData.reservations);
+      lastSyncedEl.textContent = formatSyncTime(freshData.lastSync);
+    }
+  } catch (e) {
+    console.error("[popup] GET_DATA etter sync feilet:", e);
+    showStatus(`Feil: ${e.message}`);
   }
 });
 

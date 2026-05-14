@@ -88,6 +88,40 @@ body {
   margin-bottom: 4px;
 }
 
+.status__text strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.status--login {
+  padding: 16px;
+  text-align: center;
+}
+
+.status--login .status__text {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.status__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.status__action:hover {
+  background-color: var(--color-accent-hover);
+}
+
 /* Progress bar */
 .progress {
   height: 6px;

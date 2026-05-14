@@ -35,10 +35,12 @@ Full OpenAPI-spec i `docs/api/openapi.json`. Anonymiserte eksempler i `docs/api/
 
 Alle stats-funksjoner bruker én av to filtre:
 
-- **`filterValid()`** — `canceled == null` OG `price.total != null`. Inkluderer noTrips (bruker betalte). Brukes av: `costStats()`, `monthlyCosts()`, `yearlyCosts()`.
+- **`filterValid()`** — `canceled == null` OG `price.total != null`. Inkluderer noTrips (bruker betalte). Brukes av: `costStats()`, `monthlyCosts()`, `yearlyCosts()`, `bookingPatterns()`.
 - **`filterDriven()`** — `filterValid()` OG `!noTrips`. Kun faktisk kjøring. Brukes av: `usagePatterns()`, `mileageStats()`, `totalCO2()`, `estimateOwnershipCost()`.
 
 Bruk feil filter → feil tall uten synlig feil.
+
+`bookingPatterns()` krever i tillegg `created != null` og dropper reservasjoner uten feltet (eldre data kan mangle det). Negative lead times (booking opprettet etter starttid — rettelser, spontan-bruk) klampes til 0.
 
 ## Storage-nøkler
 
@@ -58,9 +60,20 @@ Reservasjoner og lastSync er API-data — rør dem ikke direkte. tripCategories 
 - **Rate-limiting:** `lib/api.js` legger inn 50ms delay mellom kall. 429-svar → eksponentiell backoff (2^attempt × 1000ms). Endre ikke uten grunn.
 - **Sync-intervall:** Maks én gang per time (`SYNC_INTERVAL_MS`). Manuell sync trigges av brukeren.
 - **Inkrementell sync:** Henter kun nye reservasjoner (sammenligner ID-er mot cache). Eksisterende data oppdateres IKKE ved re-sync.
-- **Token:** Kan utløpe (401). background.js ber content script om nytt token. Feiler stille hvis dele.no-fane er lukket.
+- **Single-flight sync-lock:** `background.js` holder én `syncInFlight`-promise. Parallelle SYNC_NOW-meldinger (f.eks. popup + dashboard åpne samtidig) deler samme promise. Uten dette gikk progress-telleren baklengs.
+- **Token:** Kan utløpe (401). background.js spør først content script via `tabs.sendMessage`. Hvis content-scriptet ikke er injisert (Firefox MV3-begrensning ved oppstart), faller den tilbake til `scripting.executeScript` som leser `localStorage("persist:data")` direkte. Derfor `scripting`-permission i `manifest.json`. Feiler stille hvis ingen app.dele.no-fane er åpen.
 
 Endepunkter:
 - `GET /api/reservations/historic?page=0&size=100&sort=start,desc&membershipId=<UUID>`
 - `GET /api/reservations/{id}`
 - Auth: `authorization`-header med bearer token fra `localStorage("persist:data")` på app.dele.no
+
+## Turkategorier
+
+`lib/categories.js` har `KEYWORD_MAP` — substring-match mot `notes` (lowercased, ingen ordgrenser). Rekkefølgen betyr noe: første kategori som matcher vinner, så `handletur` ligger før `hoytid` for at "juleshopping" havner riktig. Manuelt valg i UI (lagret i `tripCategories`) overstyrer alltid.
+
+Kartet inneholder Fredriks personlige keywords (`vibecke`, `knappskog`, `turøy`, `bouvet`, hyttenavn osv.). Andre brukere må fjerne/erstatte før utvidelsen er nyttig for dem. Treffer ca. 82 % av notes med default-listen — uten personlige nøkkelord faller det betydelig.
+
+## Varemerke
+
+Ikonene i `icons/` er basert på Dele AS sitt offisielle logo. For privat sideloading er det greit. For Chrome Web Store / AMO-publisering: lag eget Dele-inspirert symbol (samme lilla, `#51289D`, er fritt fram).
