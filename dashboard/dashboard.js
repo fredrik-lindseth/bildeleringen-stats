@@ -6,6 +6,7 @@ import {
   yearlyCosts,
   usagePatterns,
   mileageStats,
+  bookingPatterns,
 } from "../lib/stats.js";
 
 import {
@@ -97,6 +98,21 @@ function formatMonthLabel(key) {
   return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${year}`;
 }
 
+// Vis tall med mellomrom som tusen-separator (norsk konvensjon).
+// Bruker vanlig mellomrom (ikke NBSP) så det er trygt i input-felt.
+function formatNumberDisplay(n) {
+  if (n == null || n === 0) return "";
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+// Strip mellomrom, godta komma som desimal, returner Number.
+function parseNumberInput(str) {
+  if (str == null) return 0;
+  const cleaned = String(str).replace(/\s/g, "").replace(",", ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function formatDuration(hours) {
   if (hours == null || isNaN(hours)) return "–";
   const h = Math.floor(hours);
@@ -127,6 +143,24 @@ const emptyState = $("empty-state");
 const mainContent = $("main-content");
 const syncBtn = $("sync-btn");
 const lastSyncedEl = $("last-synced");
+const dataSummaryEl = $("data-summary");
+
+function updateDataSummary(reservations) {
+  if (!reservations || reservations.length === 0) {
+    dataSummaryEl.textContent = "";
+    return;
+  }
+  const valid = filterValid(reservations);
+  const total = valid.reduce((sum, r) => sum + (r.price?.total || 0), 0);
+
+  const years = [...new Set(reservations.map((r) => new Date(r.start).getFullYear()))]
+    .sort((a, b) => a - b);
+  const yearLabel =
+    years.length > 1 ? `${years[0]}–${years[years.length - 1]}` : `${years[0]}`;
+
+  dataSummaryEl.textContent =
+    `${reservations.length} turer • ${yearLabel} • ${formatNOK.format(total)}`;
+}
 
 // ---------- Chart instances (for cleanup) ----------
 const charts = {};
@@ -141,12 +175,44 @@ function destroyChart(name) {
 // ---------- Status / UI ----------
 
 function showStatus(message) {
+  statusEl.classList.remove("status--login");
+  removeStatusAction();
   statusText.textContent = message;
   statusEl.hidden = false;
   emptyState.hidden = true;
 }
 
+function showLoginRequired() {
+  statusEl.classList.add("status--login");
+  statusText.innerHTML = `<strong>Du må logge inn på Bildeleringen</strong><br>Vi henter dataene dine så snart du er innlogget på app.dele.no.`;
+  removeStatusAction();
+
+  const action = document.createElement("a");
+  action.id = "status-action";
+  action.className = "status__action";
+  action.textContent = "Åpne app.dele.no →";
+  action.href = "https://app.dele.no";
+  action.target = "_blank";
+  action.rel = "noopener";
+  statusEl.appendChild(action);
+
+  progressBar.hidden = true;
+  statusEl.hidden = false;
+  emptyState.hidden = true;
+}
+
+function removeStatusAction() {
+  const existing = document.getElementById("status-action");
+  if (existing) existing.remove();
+}
+
+function isAuthError(error) {
+  return error === "NOT_LOGGED_IN" || error === "AUTH_EXPIRED";
+}
+
 function hideStatus() {
+  statusEl.classList.remove("status--login");
+  removeStatusAction();
   statusEl.hidden = true;
 }
 
@@ -158,7 +224,10 @@ function showProgress(pct) {
 function showEmpty() {
   emptyState.hidden = false;
   mainContent.hidden = true;
-  hideStatus();
+  // Behold login-prompt synlig hvis den vises — den er viktigere enn empty-state
+  if (!statusEl.classList.contains("status--login")) {
+    hideStatus();
+  }
 }
 
 function showMain() {
@@ -435,7 +504,116 @@ function renderHeatmapWithLabels(canvas, heatmapData) {
   }
 }
 
-// ---------- Rendering: Section 3 — Kilometer ----------
+// ---------- Rendering: Section 3 — Bookingmønster ----------
+
+function formatLeadDays(days) {
+  if (days == null || isNaN(days)) return "–";
+  if (days < 1) {
+    const hours = Math.round(days * 24);
+    return `${hours} t`;
+  }
+  // En desimal opp til 10 dager, deretter heltall
+  return days < 10
+    ? `${days.toFixed(1)} dager`
+    : `${Math.round(days)} dager`;
+}
+
+function renderBookingPatterns(reservations) {
+  const patterns = bookingPatterns(reservations);
+
+  if (!patterns) {
+    $("booking-empty").hidden = false;
+    $("booking-content").hidden = true;
+    destroyChart("leadTime");
+    destroyChart("topStations");
+    return;
+  }
+
+  $("booking-empty").hidden = true;
+  $("booking-content").hidden = false;
+
+  // Stat cards
+  setText("booking-avg-lead", formatLeadDays(patterns.avgDays));
+  setText("booking-median-lead", formatLeadDays(patterns.medianDays));
+  setText(
+    "booking-short-notice",
+    `${Math.round(patterns.shortNoticeShare * 100)} %`
+  );
+  setText("booking-unique-stations", String(patterns.uniqueStations));
+
+  // Lead time histogram
+  destroyChart("leadTime");
+  const distLabels = patterns.distribution.map((b) => b.label);
+  const distData = patterns.distribution.map((b) => b.count);
+  charts.leadTime = createBarChart(
+    $("lead-time-chart"),
+    distLabels,
+    distData,
+    "Turer",
+    { yTitle: "Antall" }
+  );
+
+  // Top stations (top 10, resten samlet som "Andre")
+  destroyChart("topStations");
+  const TOP_N = 10;
+  const top = patterns.stationsRanked.slice(0, TOP_N);
+  const rest = patterns.stationsRanked.slice(TOP_N);
+  const stationLabels = top.map((s) => s.name);
+  const stationData = top.map((s) => s.count);
+  if (rest.length > 0) {
+    stationLabels.push(`Andre (${rest.length})`);
+    stationData.push(rest.reduce((sum, s) => sum + s.count, 0));
+  }
+
+  charts.topStations = new Chart($("top-stations-chart"), {
+    type: "bar",
+    data: {
+      labels: stationLabels,
+      datasets: [
+        {
+          label: "Turer",
+          data: stationData,
+          backgroundColor: cssVar("--color-accent"),
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.parsed.x} turer`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: "Antall turer", font: { size: 12 } },
+          ticks: { precision: 0 },
+        },
+        y: {
+          ticks: { font: { size: 12 } },
+        },
+      },
+    },
+  });
+
+  // Method detail
+  const methodDetail = $("booking-method-detail");
+  if (methodDetail) {
+    methodDetail.innerHTML = `
+      <p><strong>Forhåndsvarsel</strong> = tid fra du opprettet bookingen (<code>created</code>) til turen startet (<code>start</code>).</p>
+      <p>Negative verdier (opprettet etter starttid — typisk for spontane turer) settes til 0 timer.</p>
+      <p>Inkluderer alle bookinger med en kostnad, også turer som ikke ble kjørt, siden de fortsatt viser bookingatferd. Avbestilte turer ekskluderes.</p>
+      <p style="margin-top: 4px;">Stasjon hentes fra <code>location.name</code> på hver booking.</p>
+      <p style="margin-top: 4px;">Reservasjoner som mangler <code>created</code>-felt (eldre data) ekskluderes fra beregningen.</p>
+    `;
+  }
+}
+
+// ---------- Rendering: Section 4 — Kilometer ----------
 
 function renderMileage(reservations) {
   const mileage = mileageStats(reservations);
@@ -956,14 +1134,20 @@ function buildTransportForm(year, savedData) {
         row.appendChild(select);
       } else {
         const input = document.createElement("input");
-        input.type = field.type;
+        // type="text" + inputmode lar oss godta "4 740" og andre format.
+        // Tall-input parses og normaliseres ved save og blur.
+        input.type = "text";
+        input.inputMode = "numeric";
+        input.autocomplete = "off";
         input.name = `${mode}_${field.key}`;
         input.placeholder = field.label;
-        input.min = "0";
-        input.step = "any";
         if (modeData[field.key] != null && modeData[field.key] !== 0) {
-          input.value = modeData[field.key];
+          input.value = formatNumberDisplay(modeData[field.key]);
         }
+        input.addEventListener("blur", () => {
+          const parsed = parseNumberInput(input.value);
+          input.value = parsed > 0 ? formatNumberDisplay(parsed) : "";
+        });
         row.appendChild(input);
       }
     }
@@ -1049,7 +1233,9 @@ async function renderTransport(reservations) {
       for (const field of definition.fields) {
         const el = document.querySelector(`[name="${mode}_${field.key}"]`);
         if (el && el.value !== "") {
-          modeData[field.key] = field.type === "select" ? el.value : Number(el.value);
+          modeData[field.key] = field.type === "select"
+            ? el.value
+            : parseNumberInput(el.value);
         }
       }
       if (Object.keys(modeData).length > 0) {
@@ -1067,6 +1253,16 @@ async function renderTransport(reservations) {
 
     // Re-render summary
     renderTransportSummary(reservations, freshData, transportYear);
+  };
+
+  // "Null alt"-knappen tømmer alle input-felt (men lagrer ikke før bruker
+  // trykker Lagre — gir mulighet til å ombestemme seg).
+  $("transport-reset").onclick = () => {
+    const inputs = document.querySelectorAll("#transport-fields input");
+    for (const input of inputs) input.value = "";
+    const status = $("transport-save-status");
+    status.textContent = "Trykk Lagre for å bekrefte";
+    setTimeout(() => { status.textContent = ""; }, 3000);
   };
 }
 
@@ -1231,11 +1427,11 @@ async function handleSync(force = false) {
   progressBar.hidden = true;
 
   if (result && result.error) {
-    const msg =
-      result.error === "NOT_LOGGED_IN" || result.error === "AUTH_EXPIRED"
-        ? "Logg inn på app.dele.no først"
-        : `Feil: ${result.error}`;
-    showStatus(msg);
+    if (isAuthError(result.error)) {
+      showLoginRequired();
+    } else {
+      showStatus(`Feil: ${result.error}`);
+    }
     return false;
   }
 
@@ -1271,10 +1467,12 @@ async function init() {
   // We have data — render everything
   allReservations = data.reservations;
   lastSyncedEl.textContent = formatSyncTime(data.lastSync);
+  updateDataSummary(allReservations);
 
   buildYearSelector(allReservations);
   renderCosts(allReservations);
   renderUsage(allReservations);
+  renderBookingPatterns(allReservations);
   renderMileage(allReservations);
   renderTrends(allReservations);
   renderOwnership(allReservations);
@@ -1299,10 +1497,12 @@ syncBtn.addEventListener("click", async () => {
   if (data && data.reservations && data.reservations.length > 0) {
     allReservations = data.reservations;
     lastSyncedEl.textContent = formatSyncTime(data.lastSync);
+    updateDataSummary(allReservations);
 
     buildYearSelector(allReservations);
     renderCosts(allReservations);
     renderUsage(allReservations);
+    renderBookingPatterns(allReservations);
     renderMileage(allReservations);
     renderTrends(allReservations);
     renderOwnership(allReservations);
@@ -1358,6 +1558,213 @@ document.addEventListener("click", (e) => {
     toggle.textContent = open ? "Slik beregner vi \u25b8" : "Slik beregner vi \u25be";
   }
 });
+
+// ---------- Dev tools (skjult bak ?dev=1) ----------
+
+const DEV_STORAGE_KEYS = [
+  "reservations",
+  "lastSync",
+  "tripCategories",
+  "transportData",
+  "userKeywords",
+];
+
+function isDevMode() {
+  return new URLSearchParams(window.location.search).get("dev") === "1";
+}
+
+function setDevStatus(message, kind) {
+  const el = $("dev-action-status");
+  if (!el) return;
+  el.textContent = message || "";
+  el.classList.remove("dev-status--ok", "dev-status--error");
+  if (kind === "ok") el.classList.add("dev-status--ok");
+  if (kind === "error") el.classList.add("dev-status--error");
+}
+
+function clearDevStatusLater(ms = 4000) {
+  setTimeout(() => setDevStatus("", null), ms);
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+async function refreshDevInfo() {
+  const data = await storage.get(DEV_STORAGE_KEYS);
+  const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+
+  setText("dev-count", `${reservations.length}`);
+  setText(
+    "dev-last-sync",
+    data.lastSync
+      ? new Date(data.lastSync).toLocaleString("nb-NO", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Aldri"
+  );
+
+  // Bytes-tellingen er omtrentlig \u2014 JSON-st\u00f8rrelse, ikke faktisk storage-quota.
+  const size = new Blob([JSON.stringify(data)]).size;
+  setText("dev-storage-size", `~${formatBytes(size)}`);
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function handleDevExport() {
+  try {
+    const data = await storage.get(["reservations", "lastSync"]);
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      reservations: data.reservations || [],
+      lastSync: data.lastSync || null,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const today = new Date().toISOString().slice(0, 10);
+    downloadBlob(blob, `bildeleringen-backup-${today}.json`);
+    setDevStatus(`Eksporterte ${payload.reservations.length} turer`, "ok");
+    clearDevStatusLater();
+  } catch (err) {
+    console.error("Export failed:", err);
+    setDevStatus(`Eksport feilet: ${err.message}`, "error");
+  }
+}
+
+function extractReservations(parsed) {
+  // Godta enten { reservations: [...] }-format (v\u00e5r eksport) eller en ren array.
+  if (Array.isArray(parsed)) return parsed;
+  if (parsed && Array.isArray(parsed.reservations)) return parsed.reservations;
+  return null;
+}
+
+function looksLikeReservation(item) {
+  // Lett sjekk \u2014 vi krever ikke fullt skjema, men nok til \u00e5 avvise tilfeldig JSON.
+  return (
+    item &&
+    typeof item === "object" &&
+    typeof item.id !== "undefined" &&
+    typeof item.start === "string"
+  );
+}
+
+async function handleDevImportFile(file) {
+  if (!file) return;
+  try {
+    const text = await file.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      setDevStatus("Ugyldig JSON \u2014 kan ikke lese filen.", "error");
+      return;
+    }
+
+    const reservations = extractReservations(parsed);
+    if (!reservations) {
+      setDevStatus(
+        "Filen mangler en reservations-array. Forventet { reservations: [...] } eller en JSON-array.",
+        "error"
+      );
+      return;
+    }
+
+    if (reservations.length === 0) {
+      setDevStatus("Filen inneholder 0 reservasjoner \u2014 avbryter.", "error");
+      return;
+    }
+
+    // Stikkpr\u00f8ve: f\u00f8rste element m\u00e5 se ut som en reservasjon.
+    if (!looksLikeReservation(reservations[0])) {
+      setDevStatus(
+        "Elementene ser ikke ut som reservasjoner (mangler id eller start).",
+        "error"
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Importer ${reservations.length} turer? Dette overskriver alle eksisterende reservasjoner.`
+    );
+    if (!confirmed) {
+      setDevStatus("Import avbrutt.", null);
+      clearDevStatusLater();
+      return;
+    }
+
+    await storage.set({
+      reservations,
+      lastSync: Date.now(),
+    });
+    setDevStatus(`Importerte ${reservations.length} turer. Laster p\u00e5 nytt...`, "ok");
+    // Reload for \u00e5 trigge full re-render av alle seksjoner.
+    setTimeout(() => location.reload(), 800);
+  } catch (err) {
+    console.error("Import failed:", err);
+    setDevStatus(`Import feilet: ${err.message}`, "error");
+  }
+}
+
+async function handleDevReset() {
+  const confirmed = window.confirm(
+    "Nullstille alt? Dette sletter reservasjoner, kategorier og transportdata fra storage. Kan ikke angres."
+  );
+  if (!confirmed) return;
+
+  try {
+    // storage-polyfill eksponerer ikke remove() \u2014 bruk underliggende API direkte.
+    await browserAPI.storage.local.remove(DEV_STORAGE_KEYS);
+    setDevStatus("Alt nullstilt. Laster p\u00e5 nytt...", "ok");
+    setTimeout(() => location.reload(), 600);
+  } catch (err) {
+    console.error("Reset failed:", err);
+    setDevStatus(`Nullstilling feilet: ${err.message}`, "error");
+  }
+}
+
+function initDevTools() {
+  if (!isDevMode()) return;
+
+  const wrapper = $("devtools-wrapper");
+  if (!wrapper) return;
+  // Wrapperen ligger utenfor <main>, så den er synlig selv når dashbordet er
+  // i empty/login-state — det er da panelet er mest nyttig.
+  wrapper.hidden = false;
+
+  refreshDevInfo();
+
+  $("dev-export-btn").addEventListener("click", handleDevExport);
+
+  const fileInput = $("dev-import-file");
+  $("dev-import-btn").addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    await handleDevImportFile(file);
+    // T\u00f8m slik at samme fil kan velges p\u00e5 nytt.
+    e.target.value = "";
+  });
+
+  $("dev-reset-btn").addEventListener("click", handleDevReset);
+}
+
+initDevTools();
 
 // Start
 init();
