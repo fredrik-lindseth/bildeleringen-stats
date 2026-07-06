@@ -4,6 +4,9 @@
 
 set -e
 
+# Kjør alltid fra stats/-rota (skriptet ligger i stats/scripts/)
+cd "$(dirname "$0")/.."
+
 VERSION=$(grep '"version"' manifest.json | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
 OUTDIR="dist"
 ZIPNAME="bildeleringen-stats-v${VERSION}.zip"
@@ -14,6 +17,7 @@ rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"
 
 # Files to include in the release
+cp ../LICENSE ../README.md .
 zip -r "$OUTDIR/$ZIPNAME" \
   manifest.json \
   background.js \
@@ -28,6 +32,7 @@ zip -r "$OUTDIR/$ZIPNAME" \
   README.md \
   -x "*.DS_Store" \
   -x "*debug*"
+rm -f LICENSE README.md
 
 echo ""
 echo "Created: $OUTDIR/$ZIPNAME"
