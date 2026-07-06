@@ -582,15 +582,15 @@ git commit -m "feat(flex): freeBlocks — maksimale ledige blokker i vinduet"
 
 **Interfaces:**
 - Consumes: `freeBlocks`, `blockMinutes`.
-- Produces: `fitCar(car, wish): CarFit`.
+- Produces: `clippedSegments(availability, windowStart, windowEnd): Array<{start: Date, end: Date, state}>` og `fitCar(car, wish): CarFit`.
   - `car`: objekt fra `searchResult.cars[]` (`carId`, `carNumber`, `model`, `carCategory`, `seats`, `hourlyRate`, `carProperties`, `location: {name, distance, id}`, `availability`).
   - `wish`: `{ earliestStart: Date, latestEnd: Date, durationMinutes: number|null, filters }`.
-  - `CarFit`: `{ carId, carNumber, model, category, seats, carProperties, hourlyRate, location, kind: "fits"|"short"|"none", proposed: {start,end}|null, coversWholeWindow: boolean, shiftMinutes: number, bestBlockMinutes: number, shortfallMinutes: number }`.
+  - `CarFit`: `{ carId, carNumber, model, category, seats, carProperties, hourlyRate, location, segments, kind: "fits"|"short"|"none", proposed: {start,end}|null, coversWholeWindow: boolean, shiftMinutes: number, bestBlockMinutes: number, shortfallMinutes: number }`. `segments` er alle availability-segmenter (uansett state) klippet til vinduet — grunnlaget for tidslinja i UI-en.
 
 - [ ] **Step 1: Skriv feilende tester (legg til i `flex/test/flex.test.js`)**
 
 ```js
-import { fitCar } from "../lib/flex.js";
+import { fitCar, clippedSegments } from "../lib/flex.js";
 
 const car = (availability, extra = {}) => ({
   carId: "c1", carNumber: "948", model: "Toyota Yaris", carCategory: "Småbil",
@@ -645,6 +645,27 @@ test("fitCar: ingen ledig tid -> none", () => {
   assert.equal(f.kind, "none");
   assert.equal(f.proposed, null);
 });
+
+test("fitCar returnerer segments (alle states) klippet til vinduet", () => {
+  const f = fitCar(car([
+    seg("2026-07-01T00:00:00", "2026-07-09T00:00:00", "AVAILABLE"),
+    seg("2026-07-09T00:00:00", "2026-07-20T00:00:00", "RESERVED"),
+  ]), wholeWindowWish);
+  assert.equal(f.segments.length, 2);
+  assert.equal(f.segments[0].state, "AVAILABLE");
+  // klippet til vindusstart 09:00 08.07, ikke 01.07
+  assert.equal(f.segments[0].start.getTime(), wholeWindowWish.earliestStart.getTime());
+  assert.equal(f.segments[1].state, "RESERVED");
+});
+
+test("clippedSegments dropper segmenter uten overlapp", () => {
+  const segs = clippedSegments(
+    [seg("2026-07-01T00:00:00", "2026-07-02T00:00:00", "RESERVED")],
+    parseLocalISO("2026-07-08T00:00:00"),
+    parseLocalISO("2026-07-09T00:00:00")
+  );
+  assert.equal(segs.length, 0);
+});
 ```
 
 - [ ] **Step 2: Kjør og bekreft feil**
@@ -655,9 +676,21 @@ Expected: FAIL — "does not provide an export named 'fitCar'".
 - [ ] **Step 3: Legg til `fitCar` i `flex/lib/flex.js`**
 
 ```js
-const MS = 60 * 1000;
+// Alle availability-segmenter (uansett state) klippet til vinduet — for tidslinja.
+export function clippedSegments(availability, windowStart, windowEnd) {
+  const out = [];
+  for (const s of availability) {
+    const start = parseLocalISO(s.start);
+    const end = parseLocalISO(s.end);
+    const cs = start < windowStart ? windowStart : start;
+    const ce = end > windowEnd ? windowEnd : end;
+    if (ce <= cs) continue;
+    out.push({ start: cs, end: ce, state: s.state });
+  }
+  return out;
+}
 
-function carBase(car) {
+function carBase(car, segments) {
   return {
     carId: car.carId,
     carNumber: car.carNumber,
@@ -671,11 +704,13 @@ function carBase(car) {
       distance: car.location?.distance,
       id: car.location?.id,
     },
+    segments,
   };
 }
 
 export function fitCar(car, wish) {
-  const base = carBase(car);
+  const segments = clippedSegments(car.availability, wish.earliestStart, wish.latestEnd);
+  const base = carBase(car, segments);
   const blocks = freeBlocks(car.availability, wish.earliestStart, wish.latestEnd);
   if (blocks.length === 0) {
     return { ...base, kind: "none", proposed: null, coversWholeWindow: false,
@@ -687,7 +722,7 @@ export function fitCar(car, wish) {
 
   if (wish.durationMinutes == null) {
     // hele-vinduet-modus
-    const windowMinutes = (wish.latestEnd - wish.earliestStart) / MS;
+    const windowMinutes = (wish.latestEnd - wish.earliestStart) / MS_PER_MINUTE;
     if (blocks.some(coversWindow)) {
       return { ...base, kind: "fits",
                proposed: { start: wish.earliestStart, end: wish.latestEnd },
@@ -705,15 +740,15 @@ export function fitCar(car, wish) {
   const fitting = blocks.filter((b) => blockMinutes(b) >= D);
   if (fitting.length > 0) {
     const earliest = fitting.reduce((a, b) => (b.start < a.start ? b : a));
-    const proposed = { start: earliest.start, end: new Date(earliest.start.getTime() + D * MS) };
+    const proposed = { start: earliest.start, end: new Date(earliest.start.getTime() + D * MS_PER_MINUTE) };
     return { ...base, kind: "fits", proposed,
-             coversWholeWindow: coversWindow({ start: proposed.start, end: proposed.end }),
-             shiftMinutes: (proposed.start - wish.earliestStart) / MS,
+             coversWholeWindow: coversWindow(proposed),
+             shiftMinutes: (proposed.start - wish.earliestStart) / MS_PER_MINUTE,
              bestBlockMinutes, shortfallMinutes: 0 };
   }
   return { ...base, kind: "short",
            proposed: { start: longest.start, end: longest.end },
-           coversWholeWindow: false, shiftMinutes: (longest.start - wish.earliestStart) / MS,
+           coversWholeWindow: false, shiftMinutes: (longest.start - wish.earliestStart) / MS_PER_MINUTE,
            bestBlockMinutes, shortfallMinutes: D - bestBlockMinutes };
 }
 ```
@@ -1390,12 +1425,18 @@ function timeline(f, wish) {
   const bar = el("div", { class: "timeline" });
   const span = wish.latestEnd - wish.earliestStart;
   const pct = (ms) => `${(ms / span) * 100}%`;
-  // grønne ledige blokker (fra fitCar-input er ikke tilgjengelig her; bruk proposed + antatt reservert ellers)
-  // Enkel v1: vis ledig-blokken vi foreslår som grønt segment.
+  // Grå bakgrunn = opptatt/utilgjengelig. Tegn ledige segmenter grønt oppå.
+  for (const s of f.segments || []) {
+    if (s.state !== "AVAILABLE") continue;
+    const left = s.start - wish.earliestStart;
+    const width = s.end - s.start;
+    bar.append(el("div", { class: "seg available", style: `left:${pct(left)};width:${pct(width)}` }));
+  }
+  // Lilla markør-brakett rundt det foreslåtte booking-vinduet.
   if (f.proposed) {
     const left = f.proposed.start - wish.earliestStart;
     const width = f.proposed.end - f.proposed.start;
-    bar.append(el("div", { class: "seg available", style: `left:${pct(left)};width:${pct(width)}` }));
+    bar.append(el("div", { class: "marker", style: `left:${pct(left)};width:${pct(width)}` }));
   }
   return bar;
 }
@@ -1403,7 +1444,7 @@ function timeline(f, wish) {
 init();
 ```
 
-Merk om tidslinjen: v1 viser den foreslåtte ledige blokken som grønt segment mot grå bakgrunn. Full segment-for-segment-tidslinje (alle ledig/opptatt-luker) krever at `solve`/`fitCar` returnerer bilens `availability` videre. Legg det til hvis ønsket: utvid `carBase` med `availabilitySegments: freeBlocks(...)` eller rå segmenter, og tegn hvert segment. Dette er en ren utvidelse, ikke påkrevd for at v1 skal fungere.
+Tidslinja tegner hele ledig/opptatt-mønsteret i vinduet (grønne ledige segmenter på grå bakgrunn) med en lilla brakett rundt det foreslåtte vinduet — spec-krav nivå 1.
 
 - [ ] **Step 4: Verifiser hele flyten i nettleseren**
 
@@ -1591,7 +1632,7 @@ git commit -m "feat(flex): del-opp-på-to-biler (fase 1.5)"
 ## Self-Review
 
 **Spec-dekning:**
-- Ledig-tidslinje → Task 8 (timeline) + note om full segment-visning.
+- Ledig-tidslinje → Task 4 (`clippedSegments` → `CarFit.segments`) + Task 8 (full segment-for-segment tidslinje).
 - Passende vinduer (eksakt/skyv/kort ned) → Task 4 (`fitCar`), Task 5 (`solve` buckets).
 - Søsken-bil → Task 5 (`siblingSuggestions`).
 - Del opp på to biler → Task 9 (`splitPairs`), markert fase 1.5.
@@ -1604,11 +1645,10 @@ git commit -m "feat(flex): del-opp-på-to-biler (fase 1.5)"
 
 **Placeholder-skann:** Ingen "TBD/TODO". Tidslinje-noten i Task 8 er en bevisst, valgfri utvidelse med konkret oppskrift, ikke en åpen placeholder — v1 fungerer uten den.
 
-**Type-konsistens:** `CarFit`-felter (`kind`, `proposed`, `coversWholeWindow`, `shiftMinutes`, `bestBlockMinutes`, `shortfallMinutes`, `location.{name,distance,id}`) er like i Task 4, 5 og forbrukt i Task 8. `searchAvailability(point, start, end, token)` med `point:{lng,lat}` er lik i Task 6 og kalt i background. `solve`-retur `{whole, adjusted, siblings}` matcher `render` i Task 8.
+**Type-konsistens:** `CarFit`-felter (`kind`, `proposed`, `coversWholeWindow`, `shiftMinutes`, `bestBlockMinutes`, `shortfallMinutes`, `segments`, `location.{name,distance,id}`) er like i Task 4, 5 og forbrukt i Task 8 (`timeline` leser `f.segments`). `searchAvailability(point, start, end, token)` med `point:{lng,lat}` er lik i Task 6 og kalt i background. `solve`-retur `{whole, adjusted, siblings}` matcher `render` i Task 8.
 
 ## Åpne spørsmål / risiko
 
-- Full segment-for-segment tidslinje er utsatt til en valgfri utvidelse (Task 8-note).
 - `siblingSuggestions` antar at målbilen er innenfor distansefilteret; hvis brukeren favoriserer en bil langt unna, kan den falle ut. Håndteres når "mine biler"-favoritter kobles på target.
 - Per-bil deep-link ikke funnet — handoff bruker tid + stedsnavn (godkjent for v1).
 - `before`/`after` i søkesvaret er fortsatt ukjent (ikke brukt).
