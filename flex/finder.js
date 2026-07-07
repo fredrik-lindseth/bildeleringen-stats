@@ -1,4 +1,4 @@
-import { solve } from "./lib/flex.js";
+import { solve, splitPairs } from "./lib/flex.js";
 import { parseLocalISO, toLocalISO } from "./lib/format.js";
 import { getPlaces } from "./lib/storage.js";
 
@@ -69,7 +69,7 @@ async function onSearch(e) {
     return;
   }
   const out = solve(res.result, wish);
-  render(results, out, wish);
+  render(results, out, wish, res.result);
 }
 
 function errorText(code) {
@@ -78,14 +78,28 @@ function errorText(code) {
   return `Noe gikk galt: ${code}`;
 }
 
-function render(container, out, wish) {
+function render(container, out, wish, searchResult) {
   container.replaceChildren();
   bucket(container, "Ledig hele ditt vindu", out.whole, wish);
   bucket(container, "Passer med justering", out.adjusted, wish);
   if (out.siblings.length) bucket(container, "Lignende bil i nærheten", out.siblings, wish);
+  if (!out.whole.length && wish.durationMinutes == null) {
+    const pairs = splitPairs(searchResult, wish);
+    if (pairs.length) renderSplits(container, pairs);
+  }
   if (!out.whole.length && !out.adjusted.length) {
     container.append(el("p", { class: "hint", text: "Ingen biler passer i dette tidsrommet. Prøv et større vindu eller lengre gangavstand." }));
   }
+}
+
+function renderSplits(container, pairs) {
+  const box = el("section", { class: "bucket" }, [el("h2", { text: `Del opp på to biler (${pairs.length})` })]);
+  for (const p of pairs) {
+    box.append(el("div", { class: "car" }, [
+      el("div", { text: `#${p.first.carNumber} ${p.first.model} (${p.first.location.name}) → bytt ${fmt(p.handover)} → #${p.second.carNumber} ${p.second.model} (${p.second.location.name})` }),
+    ]));
+  }
+  container.append(box);
 }
 
 function bucket(container, title, fits, wish) {

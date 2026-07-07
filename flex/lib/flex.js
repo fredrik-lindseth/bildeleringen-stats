@@ -160,3 +160,60 @@ export function solve(searchResult, wish) {
   const siblings = wish.target ? siblingSuggestions(fits, wish) : [];
   return { whole, adjusted, siblings };
 }
+
+function coversRange(blocks, from, to) {
+  return blocks.some((b) => b.start <= from && b.end >= to);
+}
+
+function carRef(car) {
+  return { carId: car.carId, carNumber: car.carNumber, model: car.model,
+           location: { name: car.location?.name, distance: car.location?.distance, id: car.location?.id } };
+}
+
+export function splitPairs(searchResult, wish, opts = {}) {
+  const { sameLocationOnly = false } = opts;
+  const ES = wish.earliestStart, LE = wish.latestEnd;
+  const entries = (searchResult.cars || [])
+    .filter((c) => matchesFilters(c, wish.filters))
+    .filter((c) => withinDistance(c, wish.filters))
+    .map((c) => ({ car: c, blocks: freeBlocks(c.availability, ES, LE) }))
+    .filter((e) => e.blocks.length > 0);
+
+  // Hvis en enkeltbil dekker hele vinduet er del-opp unødvendig.
+  if (entries.some((e) => coversRange(e.blocks, ES, LE))) return [];
+
+  const boundaries = new Set();
+  for (const e of entries) {
+    for (const b of e.blocks) {
+      if (b.start > ES && b.start < LE) boundaries.add(b.start.getTime());
+      if (b.end > ES && b.end < LE) boundaries.add(b.end.getTime());
+    }
+  }
+
+  const seen = new Set();
+  const pairs = [];
+  for (const tMs of [...boundaries].sort((a, b) => a - b)) {
+    const T = new Date(tMs);
+    const first = entries.filter((e) => coversRange(e.blocks, ES, T));
+    const second = entries.filter((e) => coversRange(e.blocks, T, LE));
+    for (const a of first) {
+      for (const b of second) {
+        if (a.car.carId === b.car.carId) continue;
+        if (sameLocationOnly && a.car.location?.id !== b.car.location?.id) continue;
+        const key = `${a.car.carId}|${b.car.carId}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push({ handover: T, first: carRef(a.car), second: carRef(b.car) });
+      }
+    }
+  }
+  // ranger: samme sted for bytte først, så nærmest midten
+  const mid = (ES.getTime() + LE.getTime()) / 2;
+  pairs.sort((p, q) => {
+    const ps = p.first.location.id === p.second.location.id ? 0 : 1;
+    const qs = q.first.location.id === q.second.location.id ? 0 : 1;
+    if (ps !== qs) return ps - qs;
+    return Math.abs(p.handover.getTime() - mid) - Math.abs(q.handover.getTime() - mid);
+  });
+  return pairs.slice(0, 10);
+}

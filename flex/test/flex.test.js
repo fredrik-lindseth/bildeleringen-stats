@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseLocalISO } from "../lib/format.js";
-import { freeBlocks, fitCar, clippedSegments, solve } from "../lib/flex.js";
+import { freeBlocks, fitCar, clippedSegments, solve, splitPairs } from "../lib/flex.js";
 
 const sample = JSON.parse(
   readFileSync(fileURLToPath(new URL("./fixtures/search-sample.json", import.meta.url)))
@@ -178,4 +178,32 @@ test("solve på realistisk fixture: free-1 er whole, part-1 er adjusted, far fil
   assert.ok(out.adjusted.some((f) => f.carId === "part-1"));
   assert.ok(!out.whole.some((f) => f.carId === "far-1"));
   assert.ok(!out.adjusted.some((f) => f.carId === "far-1"));
+});
+
+test("splitPairs finner par med overlevering når ingen enkeltbil dekker", () => {
+  const a = car([seg("2026-07-08T09:00:00", "2026-07-09T09:00:00", "AVAILABLE"),
+                 seg("2026-07-09T09:00:00", "2026-07-10T17:00:00", "RESERVED")], { carId: "A" });
+  const b = car([seg("2026-07-08T09:00:00", "2026-07-09T09:00:00", "RESERVED"),
+                 seg("2026-07-09T09:00:00", "2026-07-10T17:00:00", "AVAILABLE")], { carId: "B" });
+  const wish = {
+    earliestStart: parseLocalISO("2026-07-08T09:00:00"),
+    latestEnd: parseLocalISO("2026-07-10T17:00:00"),
+    durationMinutes: null, filters: {},
+  };
+  const pairs = splitPairs({ cars: [a, b] }, wish);
+  assert.ok(pairs.length >= 1);
+  assert.equal(pairs[0].handover.getTime(), parseLocalISO("2026-07-09T09:00:00").getTime());
+  assert.deepEqual([pairs[0].first.carId, pairs[0].second.carId], ["A", "B"]);
+});
+
+test("splitPairs gir ingen par når én bil dekker alt", () => {
+  const full = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")], { carId: "F" });
+  const wish = {
+    earliestStart: parseLocalISO("2026-07-08T09:00:00"),
+    latestEnd: parseLocalISO("2026-07-10T17:00:00"),
+    durationMinutes: null, filters: {},
+  };
+  // full dekker alt -> del-opp er unødvendig; splitPairs skal filtrere bort par der begge halvdeler er samme dekning
+  const pairs = splitPairs({ cars: [full] }, wish);
+  assert.equal(pairs.length, 0);
 });
