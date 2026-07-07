@@ -1,6 +1,6 @@
 import { storage } from "./browser-polyfill.js";
 
-// Eksempelveien (hjem) — midtpunkt av gatas LineString fra /api/locations.
+// Eksempelveien (hjem), midtpunkt av gatas LineString fra /api/locations.
 export const DEFAULT_PLACES = [
   { id: "home", name: "Eksempelveien (hjem)", point: { lng: 5.32415, lat: 60.39299 } },
 ];

@@ -34,7 +34,7 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "GET_AUTH_STATUS") {
-    // Probe aktivt — currentAuth er null etter bg-script-reload selv om
+    // Probe aktivt: currentAuth er null etter bg-script-reload selv om
     // brukeren er innlogget. getAuth() spør content-scriptet i dele.no-fanen.
     getAuth().then((auth) => sendResponse({ hasAuth: auth !== null }));
     return true;
@@ -51,7 +51,7 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   // Andre meldinger (f.eks. SYNC_PROGRESS som vi broadcaster til oss selv)
-  // har ingen response — viktig å returnere false.
+  // har ingen response, viktig å returnere false.
   return false;
 });
 
@@ -92,7 +92,7 @@ async function getAuth() {
     }
 
     // Inject direkte og les localStorage. Returnerer diagnose ved feil.
-    // Timeout etter 5s — hvis injection henger, gi opp og prøv neste fane.
+    // Timeout etter 5s. Hvis injection henger, gi opp og prøv neste fane.
     try {
       const injectPromise = browserAPI.scripting.executeScript({
         target: { tabId: tab.id },

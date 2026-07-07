@@ -11,7 +11,7 @@ De signeres og distribueres hver for seg. Egne gecko-id-er = egen `.xpi` per utv
 
 ## 1. Bygg zip-en
 
-Hver utvidelse pakkes med sitt eget script (kjøres fra repo-rota):
+Hver utvidelse pakkes med sitt eget script (kjøres fra repo-roten):
 
 ```bash
 ./stats/scripts/package.sh     # → stats/dist/bildeleringen-stats-v<versjon>.zip
@@ -23,8 +23,8 @@ Hver utvidelse pakkes med sitt eget script (kjøres fra repo-rota):
 
 Mozilla gir to valg når du sender inn en versjon på [addons.mozilla.org/developers](https://addons.mozilla.org/developers/):
 
-- **På dette nettstedet (listed)** — offentlig oppført på addons.mozilla.org, søkbar for alle. Strengere, ofte manuell review.
-- **På egenhånd (self / unlisted)** — Mozilla signerer, du laster ned `.xpi` fra utviklerhuben og distribuerer selv. Som regel automatisk review.
+- **På dette nettstedet (listed)**: offentlig oppført på addons.mozilla.org, søkbar for alle. Strengere, ofte manuell review.
+- **På egenhånd (self / unlisted)**: Mozilla signerer, du laster ned `.xpi` fra utviklerhuben og distribuerer selv. Som regel automatisk review.
 
 **Anbefaling nå: På egenhånd.** Det gir en signert `.xpi` du kan installere permanent (slutt på temp-add-on som forsvinner ved omstart), uten den offentlige bagasjen.
 

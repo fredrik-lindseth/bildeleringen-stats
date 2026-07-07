@@ -4,10 +4,12 @@ Nettleserutvidelse som gir deg oversikt over ditt bildeleforbruk, transportkostn
 
 > Dette prosjektet er ikke tilknyttet Bildeleringen / Dele AS. Det er laget av en ivrig bruker som ville ha bedre innsikt i eget bildeleforbruk.
 
+> **Monorepo:** dette repoet har to utvidelser. `stats/` (denne) for statistikk og analyse, og [`flex/`](flex/README.md) for fleksibelt booking-søk (finn når en bil faktisk er ledig).
+
 ## Funksjoner
 
-- **Popup** — månedlig forbruk, snittpris, mest brukte bil og besparelse
-- **Dashboard** — fullstendig statistikk med grafer:
+- **Popup**: månedlig forbruk, snittpris, mest brukte bil og besparelse
+- **Dashboard**: fullstendig statistikk med grafer:
   - Kostnader (måned, år, per tur, per km)
   - Bruksmønster (heatmap, turer per måned, mest brukte biler)
   - Bookingmønster (forhåndsvarsel, topp stasjoner, andel siste-liten)
@@ -16,8 +18,8 @@ Nettleserutvidelse som gir deg oversikt over ditt bildeleforbruk, transportkostn
   - Bilregnestykket (bildeling vs. bileierskap, inkl. Volvo EX C40 2026)
   - Turkategorier (auto-kategorisering fra turnotater)
   - Klimaregnskap (CO₂ per drivstofftype og bil)
-  - Transportkalkulator (taxi, leiebil, buss, fly, sykkel — totalbilde)
-- **Årsoppsummering** — visuell "year in review"
+  - Transportkalkulator (taxi, leiebil, buss, fly, sykkel, totalbilde)
+- **Årsoppsummering**: visuell "year in review"
 - **PNG-eksport** av hver seksjon
 
 All data forblir i nettleseren. Ingen eksterne servere, ingen sporing.
@@ -48,7 +50,7 @@ Eierkostnader og CO₂ er estimater basert på norske kilder (NAF, Miljødirekto
 
 ## Varemerke
 
-Ikonet er basert på Dele AS sitt offisielle logo. Dele AS eier merket — utvidelsen er ikke tilknyttet eller godkjent av dem. Greit for privat sideloading. Skal du publisere en fork til Chrome Web Store eller AMO, lag ditt eget Dele-inspirerte symbol (samme lilla, `#51289D`, er fritt fram).
+Ikonet er basert på Dele AS sitt offisielle logo. Dele AS eier merket. Utvidelsen er ikke tilknyttet eller godkjent av dem. Greit for privat sideloading. Skal du publisere en fork til Chrome Web Store eller AMO, lag ditt eget Dele-inspirerte symbol (samme lilla, `#51289D`, er fritt fram).
 
 ## Utvikling
 

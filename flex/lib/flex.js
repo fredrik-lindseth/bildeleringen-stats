@@ -31,7 +31,7 @@ export function freeBlocks(availability, windowStart, windowEnd) {
   return blocks;
 }
 
-// Alle availability-segmenter (uansett state) klippet til vinduet — for tidslinja.
+// Alle availability-segmenter (uansett state) klippet til vinduet, for tidslinjen.
 export function clippedSegments(availability, windowStart, windowEnd) {
   const out = [];
   for (const s of availability) {

@@ -154,7 +154,7 @@ function updateSummary() {
   const s = document.getElementById("rangeSummary");
   if (!rangeStart) { s.textContent = "Velg startdag"; return; }
   const st = document.getElementById("startTime").value;
-  if (!rangeEnd) { s.textContent = `${fmtDay(rangeStart)} ${st} — velg sluttdag`; return; }
+  if (!rangeEnd) { s.textContent = `${fmtDay(rangeStart)} ${st}, velg sluttdag`; return; }
   const et = document.getElementById("endTime").value;
   s.textContent = `${fmtDay(rangeStart)} ${st} → ${fmtDay(rangeEnd)} ${et}`;
 }
@@ -422,7 +422,7 @@ function carCard(f, wish) {
     const url = `https://app.dele.no/findcar?start=${toLocalISO(f.proposed.start)}&end=${toLocalISO(f.proposed.end)}`;
     const label = f.coversWholeWindow ? "Åpne i dele.no →" : "Åpne justert tid →";
     foot.append(el("a", { class: "car__open", href: url, target: "_blank", rel: "noopener",
-      text: label, title: `Åpner dele.no på ${fmtRange(f.proposed.start, f.proposed.end)} — velg «${f.location.name}»` }));
+      text: label, title: `Åpner dele.no på ${fmtRange(f.proposed.start, f.proposed.end)}, velg «${f.location.name}»` }));
   }
   card.append(foot);
   return card;

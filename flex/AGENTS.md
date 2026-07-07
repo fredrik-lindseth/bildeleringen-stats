@@ -1,4 +1,4 @@
-# Bildeleringen Fleksibel — prosjektkonvensjoner
+# Bildeleringen Fleksibel: prosjektkonvensjoner
 
 Egen Firefox-utvidelse ved siden av stats-utvidelsen (`../stats/`). Alternativt booking-søk oppå dele.no sitt `/api/search`: finn *når* en bil faktisk er ledig, ikke bare "opptatt". Spec + plan i `../docs/superpowers/`.
 
@@ -29,13 +29,13 @@ Utvidelsen drives via `firefox-devtools`-MCP-en, som styrer en **egen, dedikert 
 
 ## Arkitektur
 
-- `content.js` — leser token fra `localStorage("persist:data")` på app.dele.no. Klassisk script.
-- `background.js` — `getAuth()` (content script først, `scripting.executeScript` som fallback), `SEARCH`-proxy mot `/api/search`. Nuller `currentAuth` ved `AUTH_EXPIRED`.
-- `lib/search-api.js` — `searchAvailability(point, start, end, token)`, `fetchLocations(token)`. 50ms delay + 429-backoff.
-- `lib/flex.js` — motoren: `freeBlocks`, `fitCar`, `solve` (buckets whole/adjusted/siblings), `splitPairs`. Rene funksjoner.
-- `lib/format.js` — `parseLocalISO`/`toLocalISO`, naiv lokal ISO uten tidssone.
-- `lib/storage.js` — lagrede steder (Eksempelveien = hjem) + favoritter.
-- `finder.html/js/css` — fullside-UI. `popup/` — inngang.
+- `content.js`: leser token fra `localStorage("persist:data")` på app.dele.no. Klassisk script.
+- `background.js`: `getAuth()` (content script først, `scripting.executeScript` som fallback), `SEARCH`-proxy mot `/api/search`. Nuller `currentAuth` ved `AUTH_EXPIRED`.
+- `lib/search-api.js`: `searchAvailability(point, start, end, token)`, `fetchLocations(token)`. 50ms delay + 429-backoff.
+- `lib/flex.js`: motoren, med `freeBlocks`, `fitCar`, `solve` (buckets whole/adjusted/siblings), `splitPairs`. Rene funksjoner.
+- `lib/format.js`: `parseLocalISO`/`toLocalISO`, naiv lokal ISO uten tidssone.
+- `lib/storage.js`: lagrede steder (Eksempelveien = hjem) + favoritter.
+- `finder.html/js/css`: fullside-UI. `popup/`: inngang.
 
 ## API-fakta (`/api/search`)
 
@@ -43,7 +43,7 @@ Utvidelsen drives via `firefox-devtools`-MCP-en, som styrer en **egen, dedikert 
 
 - Returnerer **alle** biler i org (~356), sortert med `location.distance` (meter), men ikke rent distansesortert. Distansefilter gjøres klientside. Derfor: sekundærsøk med større radius koster ingen ekstra nettverkskall, bare kjør `solve` på nytt med mildere `maxDistanceM`.
 - Hver bil har `availability[]`: sammenhengende segmenter med `state` = `AVAILABLE` / `RESERVED` / `UNAVAILABLE`. Kun `AVAILABLE` er bookbart. Segmenter er ikke klippet til søkevinduet og er snappet til hel time.
-- `carProperties[]` bruker `carPropertyGroup` / `carPropertyName` (f.eks. group "Drivstoff") — IKKE `groupKey`/`group` som reservasjons-API-et i stats.
+- `carProperties[]` bruker `carPropertyGroup` / `carPropertyName` (f.eks. group "Drivstoff"), IKKE `groupKey`/`group` som reservasjons-API-et i stats.
 - **Flere organisasjoner:** søket returnerer biler fra alle bilkollektiv på dele.no. Vi filtrerer alltid til Bildeleringen (`ORG_BILDELERINGEN` i `lib/flex.js`) + et region-tak på 100 km (`REGION_CEILING_M` i `finder.js`) for å holde både Trondheim Bilkollektiv og Bildeleringen sine beboer-restringerte Tromsø-biler ute. Org-tabell og Tromsø-jokeren i `../docs/api/README.md`.
 
 ## Gotchas (lært, ikke gjenoppdages)
@@ -61,4 +61,4 @@ Deler token-systemet til stats (gråblå bg, hvite kort med subtil dybde, tre-ni
 - Biltype/drivstoff er toggle-brikker, ikke dropdowns. Default: Småbil + Varebil av, resten på.
 - Sjeldne filtre (biltype/drivstoff/gangavstand) ligger bak sammenleggbar "Flere filtre", lukket som standard, med hint om aktive valg.
 - "Søk" er festet i egen bunn-fot (`.wish__foot`); panelet capes til viewport-høyde og kroppen scroller internt, så Søk alltid er synlig uten scrolling.
-- Tidslinja tegner alle segmenter (grønn ledig / grå opptatt) med hover-tooltip (én egen stylet, ikke native `title`).
+- Tidslinjen tegner alle segmenter (grønn ledig / grå opptatt) med hover-tooltip (én egen stylet, ikke native `title`).

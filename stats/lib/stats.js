@@ -156,7 +156,7 @@ function getStationName(r) {
 
 export function bookingPatterns(reservations) {
   // Bruker filterValid for å se faktisk bookingatferd, inkluderer noTrips.
-  // Krever created — eldre reservasjoner kan mangle feltet.
+  // Krever created, eldre reservasjoner kan mangle feltet.
   const valid = filterValid(reservations).filter((r) => r.created != null);
   if (valid.length === 0) return null;
 

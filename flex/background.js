@@ -27,7 +27,7 @@ export async function getAuth() {
         return res;
       }
     } catch (e) {
-      // content script ikke lastet — prøv injection
+      // content script ikke lastet, prøv injection
     }
     try {
       const results = await browserAPI.scripting.executeScript({

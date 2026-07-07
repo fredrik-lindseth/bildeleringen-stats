@@ -35,9 +35,9 @@ export const CO2_METHOD = {
     "og 49% har latt være å kjøpe bil pga. bildeling " +
     "(TØI 1895/2022, Bildeling i Bergen).",
   sources: [
-    "TØI 1895/2022 — Bildeling i Bergen (Nenseth & Ellis, 2022)",
-    "TØI — Bildelingens miljøkonsekvenser (Julsrud)",
-    "Miljødirektoratet / SSB — Utslippsfaktorer norsk bilpark",
+    "TØI 1895/2022: Bildeling i Bergen (Nenseth & Ellis, 2022)",
+    "TØI: Bildelingens miljøkonsekvenser (Julsrud)",
+    "Miljødirektoratet / SSB: Utslippsfaktorer norsk bilpark",
   ],
 };
 

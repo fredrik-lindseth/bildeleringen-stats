@@ -1,4 +1,4 @@
-# Bildeleringen Stats — Prosjektkonvensjoner
+# Bildeleringen Stats: Prosjektkonvensjoner
 
 ## Monorepo
 
@@ -16,17 +16,17 @@ Utvikling skjer via `firefox-devtools`-MCP-en, som styrer en **egen, dedikert Fi
 ## Regler
 
 - **Ingen build-step.** Vanilla JS, HTML, CSS. Ingen bundler eller npm. Vendor-libs i `vendor/`.
-- **Alle farger via CSS custom properties i `:root`.** Ingen hardkodede hex/rgb utenfor `:root`. Maks 5 chart-farger (`--color-chart-1` til `--color-chart-5`) — legg til ny CSS-variabel før du bruker en 6. farge.
+- **Alle farger via CSS custom properties i `:root`.** Ingen hardkodede hex/rgb utenfor `:root`. Maks 5 chart-farger (`--color-chart-1` til `--color-chart-5`). Legg til ny CSS-variabel før du bruker en 6. farge.
 - **Mørk modus er påkrevd.** All UI må fungere i lys og mørk modus (`prefers-color-scheme`). Nye CSS-variabler trenger dark mode override.
 - **Norsk UI-tekst.** Alt brukeren ser (labels, feilmeldinger, status) på norsk. Console.log kan være engelsk.
-- **ES modules overalt** — unntatt `content.js` (content scripts støtter ikke modules).
-- **Stats-funksjoner er rene.** `lib/stats.js`, `lib/co2.js`, `lib/ownership-cost.js` har ingen sideeffekter — tar data inn, returnerer resultater. Ikke kall browser-API-er eller storage fra disse.
+- **ES modules overalt**, unntatt `content.js` (content scripts støtter ikke modules).
+- **Stats-funksjoner er rene.** `lib/stats.js`, `lib/co2.js`, `lib/ownership-cost.js` har ingen sideeffekter: tar data inn, returnerer resultater. Ikke kall browser-API-er eller storage fra disse.
 - **Vis 'Slik beregner vi'-knapp med kilder** ved alle estimater (eierkostnader, CO₂). Prefix estimerte tall med "ca." eller "~".
 - **Cross-browser:** `typeof browser !== "undefined" ? browser : chrome` for API-tilgang. `lib/browser-polyfill.js` eksporterer `browserAPI` og `storage`.
 
 ## API-feltnavn (kritisk)
 
-Reservasjonsobjekter fra dele.no bruker disse feltnavnene — IKKE det du kanskje ville gjettet:
+Reservasjonsobjekter fra dele.no bruker disse feltnavnene, IKKE det du kanskje ville gjettet:
 
 | Felt | Type | Beskrivelse |
 |---|---|---|
@@ -38,7 +38,7 @@ Reservasjonsobjekter fra dele.no bruker disse feltnavnene — IKKE det du kanskj
 | `car.properties[]` | array | `groupKey: "FUEL_TYPE"` → `name: "Bensin"/"Diesel"/"Elektrisitet"` |
 | `canceled` | datetime/null | null = ikke avbestilt (IKKE `status`) |
 | `noTrips` | boolean | Booket men ikke kjørt. Kan ha kostnad > 0 (gebyr). |
-| `notes` | string/null | Brukerens turnotater — brukes til auto-kategorisering |
+| `notes` | string/null | Brukerens turnotater, brukes til auto-kategorisering |
 | `start`, `end` | datetime | ISO-strenger |
 | `created` | datetime | Opprettelsestidspunkt (for booking lead time) |
 
@@ -48,12 +48,12 @@ Full OpenAPI-spec i `docs/api/openapi.json`. Anonymiserte eksempler i `docs/api/
 
 Alle stats-funksjoner bruker én av to filtre:
 
-- **`filterValid()`** — `canceled == null` OG `price.total != null`. Inkluderer noTrips (bruker betalte). Brukes av: `costStats()`, `monthlyCosts()`, `yearlyCosts()`, `bookingPatterns()`.
-- **`filterDriven()`** — `filterValid()` OG `!noTrips`. Kun faktisk kjøring. Brukes av: `usagePatterns()`, `mileageStats()`, `totalCO2()`, `estimateOwnershipCost()`.
+- **`filterValid()`**: `canceled == null` OG `price.total != null`. Inkluderer noTrips (bruker betalte). Brukes av: `costStats()`, `monthlyCosts()`, `yearlyCosts()`, `bookingPatterns()`.
+- **`filterDriven()`**: `filterValid()` OG `!noTrips`. Kun faktisk kjøring. Brukes av: `usagePatterns()`, `mileageStats()`, `totalCO2()`, `estimateOwnershipCost()`.
 
 Bruk feil filter → feil tall uten synlig feil.
 
-`bookingPatterns()` krever i tillegg `created != null` og dropper reservasjoner uten feltet (eldre data kan mangle det). Negative lead times (booking opprettet etter starttid — rettelser, spontan-bruk) klampes til 0.
+`bookingPatterns()` krever i tillegg `created != null` og dropper reservasjoner uten feltet (eldre data kan mangle det). Negative lead times (booking opprettet etter starttid, rettelser, spontan-bruk) klampes til 0.
 
 ## Storage-nøkler
 
@@ -66,7 +66,7 @@ Alt i `browser.storage.local`:
 | `tripCategories` | `{ reservationId: categoryKey }` | dashboard (bruker-input) |
 | `transportData` | `{ "2025": { taxi: {...}, buss: {...} } }` | dashboard (bruker-input) |
 
-Reservasjoner og lastSync er API-data — rør dem ikke direkte. tripCategories og transportData er bruker-data — slett aldri ved sync.
+Reservasjoner og lastSync er API-data. Rør dem ikke direkte. tripCategories og transportData er bruker-data. Slett aldri ved sync.
 
 ## API-regler
 
@@ -83,9 +83,9 @@ Endepunkter:
 
 ## Turkategorier
 
-`lib/categories.js` har `KEYWORD_MAP` — substring-match mot `notes` (lowercased, ingen ordgrenser). Rekkefølgen betyr noe: første kategori som matcher vinner, så `handletur` ligger før `hoytid` for at "juleshopping" havner riktig. Manuelt valg i UI (lagret i `tripCategories`) overstyrer alltid.
+`lib/categories.js` har `KEYWORD_MAP`: substring-match mot `notes` (lowercased, ingen ordgrenser). Rekkefølgen betyr noe: første kategori som matcher vinner, så `handletur` ligger før `hoytid` for at "juleshopping" havner riktig. Manuelt valg i UI (lagret i `tripCategories`) overstyrer alltid.
 
-Kartet inneholder Fredriks personlige keywords (navn, stedsnavn, arbeidsgiver, hyttenavn osv.). Andre brukere må fjerne/erstatte før utvidelsen er nyttig for dem. Treffer ca. 82 % av notes med default-listen — uten personlige nøkkelord faller det betydelig.
+Kartet inneholder Fredriks personlige keywords (navn, stedsnavn, arbeidsgiver, hyttenavn osv.). Andre brukere må fjerne/erstatte før utvidelsen er nyttig for dem. Treffer ca. 82 % av notes med default-listen. Uten personlige nøkkelord faller det betydelig.
 
 ## Varemerke
 

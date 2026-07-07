@@ -1,5 +1,7 @@
 # Utvikling
 
+Monorepo med to selvstendige utvidelser: `stats/` (denne, statistikk/analyse) og `flex/` (fleksibelt booking-søk, se `flex/README.md` og `flex/AGENTS.md`). Delte docs i `docs/`. Konvensjoner for `stats/` i `AGENTS.md`.
+
 ## Kom i gang
 
 ```bash
@@ -7,27 +9,29 @@ git clone <repo-url>
 cd bildeleringen
 ```
 
-Last inn utvidelsen:
-- **Firefox:** `about:debugging#/runtime/this-firefox` → «Last inn midlertidig tillegg» → velg `manifest.json`
-- **Chrome:** `chrome://extensions` → Utviklermodus → «Last inn upakket» → velg mappen
+Last inn stats-utvidelsen:
+- **Firefox:** `about:debugging#/runtime/this-firefox` → «Last inn midlertidig tillegg» → velg `stats/manifest.json`
+- **Chrome:** `chrome://extensions` → Utviklermodus → «Last inn upakket» → velg `stats/`-mappen
 
-Etter endringer, klikk «Last inn på nytt» (Firefox) eller oppdater-ikonet (Chrome).
+Etter endringer, klikk «Last inn på nytt» (Firefox) eller oppdater-ikonet (Chrome). UI-endringer (HTML/JS/CSS på utvidelses-sider) trenger bare sidelasting, ikke full ny-innlasting.
 
 ## Teknologi
 
-- Vanilla JS, HTML, CSS — ingen build-step, ingen npm
+- Vanilla JS, HTML, CSS: ingen build-step, ingen npm
 - [Chart.js](https://www.chartjs.org/) for grafer
 - [html2canvas](https://html2canvas.hertzen.com/) for PNG-eksport
-- WebExtension API (Manifest V3) — Firefox + Chrome
+- WebExtension API (Manifest V3): Firefox + Chrome
 
 ## Prosjektstruktur
+
+Utvidelsesfilene under ligger i `stats/`; `docs/` er delt med `flex/`.
 
 ```
 manifest.json              # Manifest V3
 background.js              # Synkronisering, caching, meldinger
 content.js                 # Leser auth fra dele.no localStorage
-popup/                     # Popup — rask oversikt
-dashboard/                 # Dashboard — 8 seksjoner med grafer
+popup/                     # Popup: rask oversikt
+dashboard/                 # Dashboard: 8 seksjoner med grafer
 summary/                   # Årsoppsummering
 lib/
   api.js                   # API-klient (paginering, retry, rate-limiting)
@@ -79,7 +83,7 @@ docs/
 ## Pakking av release
 
 ```bash
-./scripts/package.sh
+./stats/scripts/package.sh
 ```
 
-Lager `dist/bildeleringen-stats-v<versjon>.zip`.
+Lager `stats/dist/bildeleringen-stats-v<versjon>.zip`.

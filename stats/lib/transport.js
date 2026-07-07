@@ -2,9 +2,9 @@
  * Transport calculator module.
  *
  * CO₂ factors per transport mode (g/km, passenger) based on Norwegian sources:
- *   - Miljødirektoratet — Utslippsfaktorer
- *   - TØI/Skyss — Kollektivtransport passasjer-km
- *   - Avinor — Innenriks luftfart utslipp
+ *   - Miljødirektoratet: Utslippsfaktorer
+ *   - TØI/Skyss: Kollektivtransport passasjer-km
+ *   - Avinor: Innenriks luftfart utslipp
  */
 
 export const TRANSPORT_MODES = {
@@ -170,8 +170,8 @@ export const TRANSPORT_METHOD = {
     "Fly ~150 g/km per passasjer (Avinor/Miljødirektoratet), " +
     "Sykkel/gange = 0.",
   sources: [
-    "Miljødirektoratet — Utslippsfaktorer",
-    "TØI/Skyss — Kollektivtransport passasjer-km",
-    "Avinor — Innenriks luftfart utslipp",
+    "Miljødirektoratet: Utslippsfaktorer",
+    "TØI/Skyss: Kollektivtransport passasjer-km",
+    "Avinor: Innenriks luftfart utslipp",
   ],
 };

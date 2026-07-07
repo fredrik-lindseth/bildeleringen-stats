@@ -1,14 +1,14 @@
-# dele.no API — Uoffisiell dokumentasjon
+# dele.no API: Uoffisiell dokumentasjon
 
 Observert fra `app.dele.no`. Brukes av Bildeleringen Stats-utvidelsen.
 
 ## Filer
 
-- `openapi.json` — OpenAPI 3.0 spec med alle observerte endepunkter og skjemaer
-- `sample-reservation-driven.json` — Eksempel: fullført tur med km og prislinjer
-- `sample-reservation-notrip.json` — Eksempel: booket men ikke kjørt (noTrips=true, har gebyr)
-- `sample-reservation-cancelled.json` — Eksempel: avbestilt reservasjon
-- `sample-historic-list.json` — Eksempel: respons fra /reservations/historic
+- `openapi.json`: OpenAPI 3.0 spec med alle observerte endepunkter og skjemaer
+- `sample-reservation-driven.json`: eksempel på fullført tur med km og prislinjer
+- `sample-reservation-notrip.json`: eksempel på booket men ikke kjørt (noTrips=true, har gebyr)
+- `sample-reservation-cancelled.json`: eksempel på avbestilt reservasjon
+- `sample-historic-list.json`: eksempel på respons fra /reservations/historic
 
 ## Autentisering
 

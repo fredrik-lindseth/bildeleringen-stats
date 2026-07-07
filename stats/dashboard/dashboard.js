@@ -224,7 +224,7 @@ function showProgress(pct) {
 function showEmpty() {
   emptyState.hidden = false;
   mainContent.hidden = true;
-  // Behold login-prompt synlig hvis den vises — den er viktigere enn empty-state
+  // Behold login-prompt synlig hvis den vises, den er viktigere enn empty-state
   if (!statusEl.classList.contains("status--login")) {
     hideStatus();
   }
@@ -272,7 +272,7 @@ async function sendMessage(msg) {
   return browserAPI.runtime.sendMessage(msg);
 }
 
-// ---------- Rendering: Section 1 — Kostnader ----------
+// ---------- Rendering: Section 1 - Kostnader ----------
 
 let allReservations = [];
 let selectedYear = "all";
@@ -376,7 +376,7 @@ function renderCosts(reservations) {
   }
 }
 
-// ---------- Rendering: Section 2 — Bruksmønster ----------
+// ---------- Rendering: Section 2 - Bruksmønster ----------
 
 function renderUsage(reservations) {
   const patterns = usagePatterns(reservations);
@@ -504,7 +504,7 @@ function renderHeatmapWithLabels(canvas, heatmapData) {
   }
 }
 
-// ---------- Rendering: Section 3 — Bookingmønster ----------
+// ---------- Rendering: Section 3 - Bookingmønster ----------
 
 function formatLeadDays(days) {
   if (days == null || isNaN(days)) return "–";
@@ -605,7 +605,7 @@ function renderBookingPatterns(reservations) {
   if (methodDetail) {
     methodDetail.innerHTML = `
       <p><strong>Forhåndsvarsel</strong> = tid fra du opprettet bookingen (<code>created</code>) til turen startet (<code>start</code>).</p>
-      <p>Negative verdier (opprettet etter starttid — typisk for spontane turer) settes til 0 timer.</p>
+      <p>Negative verdier (opprettet etter starttid, typisk for spontane turer) settes til 0 timer.</p>
       <p>Inkluderer alle bookinger med en kostnad, også turer som ikke ble kjørt, siden de fortsatt viser bookingatferd. Avbestilte turer ekskluderes.</p>
       <p style="margin-top: 4px;">Stasjon hentes fra <code>location.name</code> på hver booking.</p>
       <p style="margin-top: 4px;">Reservasjoner som mangler <code>created</code>-felt (eldre data) ekskluderes fra beregningen.</p>
@@ -613,7 +613,7 @@ function renderBookingPatterns(reservations) {
   }
 }
 
-// ---------- Rendering: Section 4 — Kilometer ----------
+// ---------- Rendering: Section 4 - Kilometer ----------
 
 function renderMileage(reservations) {
   const mileage = mileageStats(reservations);
@@ -666,7 +666,7 @@ function renderMileage(reservations) {
   }
 }
 
-// ---------- Rendering: Section 4 — Trender ----------
+// ---------- Rendering: Section 4 - Trender ----------
 
 function renderTrends(reservations) {
   const monthly = monthlyCosts(reservations);
@@ -795,7 +795,7 @@ function renderSeasonalComparison(reservations, yearly) {
   );
 }
 
-// ---------- Rendering: Section 5 — Bilregnestykket ----------
+// ---------- Rendering: Section 5 - Bilregnestykket ----------
 
 function renderOwnership(reservations) {
   const result = estimateOwnershipCost(reservations);
@@ -924,7 +924,7 @@ function renderOwnership(reservations) {
   }
 }
 
-// ---------- Rendering: Section 6 — Turkategorier ----------
+// ---------- Rendering: Section 6 - Turkategorier ----------
 
 async function renderCategories(reservations) {
   // 1. Load saved categories from storage
@@ -1020,7 +1020,7 @@ async function renderCategories(reservations) {
   }
 }
 
-// ---------- Rendering: Section 7 — Klimaregnskap ----------
+// ---------- Rendering: Section 7 - Klimaregnskap ----------
 
 function renderClimate(reservations) {
   const total = totalCO2(reservations);
@@ -1091,7 +1091,7 @@ function renderClimate(reservations) {
   }
 }
 
-// ---------- Rendering: Section 8 — Min transport ----------
+// ---------- Rendering: Section 8 - Min transport ----------
 
 let transportYear = null;
 
@@ -1256,7 +1256,7 @@ async function renderTransport(reservations) {
   };
 
   // "Null alt"-knappen tømmer alle input-felt (men lagrer ikke før bruker
-  // trykker Lagre — gir mulighet til å ombestemme seg).
+  // trykker Lagre, gir mulighet til å ombestemme seg).
   $("transport-reset").onclick = () => {
     const inputs = document.querySelectorAll("#transport-fields input");
     for (const input of inputs) input.value = "";
@@ -1611,7 +1611,7 @@ async function refreshDevInfo() {
       : "Aldri"
   );
 
-  // Bytes-tellingen er omtrentlig \u2014 JSON-st\u00f8rrelse, ikke faktisk storage-quota.
+  // Bytes-tellingen er omtrentlig, JSON-st\u00f8rrelse, ikke faktisk storage-quota.
   const size = new Blob([JSON.stringify(data)]).size;
   setText("dev-storage-size", `~${formatBytes(size)}`);
 }
@@ -1656,7 +1656,7 @@ function extractReservations(parsed) {
 }
 
 function looksLikeReservation(item) {
-  // Lett sjekk \u2014 vi krever ikke fullt skjema, men nok til \u00e5 avvise tilfeldig JSON.
+  // Lett sjekk, vi krever ikke fullt skjema, men nok til \u00e5 avvise tilfeldig JSON.
   return (
     item &&
     typeof item === "object" &&
@@ -1673,7 +1673,7 @@ async function handleDevImportFile(file) {
     try {
       parsed = JSON.parse(text);
     } catch (e) {
-      setDevStatus("Ugyldig JSON \u2014 kan ikke lese filen.", "error");
+      setDevStatus("Ugyldig JSON, kan ikke lese filen.", "error");
       return;
     }
 
@@ -1687,7 +1687,7 @@ async function handleDevImportFile(file) {
     }
 
     if (reservations.length === 0) {
-      setDevStatus("Filen inneholder 0 reservasjoner \u2014 avbryter.", "error");
+      setDevStatus("Filen inneholder 0 reservasjoner, avbryter.", "error");
       return;
     }
 
@@ -1729,7 +1729,7 @@ async function handleDevReset() {
   if (!confirmed) return;
 
   try {
-    // storage-polyfill eksponerer ikke remove() \u2014 bruk underliggende API direkte.
+    // storage-polyfill eksponerer ikke remove(), bruk underliggende API direkte.
     await browserAPI.storage.local.remove(DEV_STORAGE_KEYS);
     setDevStatus("Alt nullstilt. Laster p\u00e5 nytt...", "ok");
     setTimeout(() => location.reload(), 600);
@@ -1745,7 +1745,7 @@ function initDevTools() {
   const wrapper = $("devtools-wrapper");
   if (!wrapper) return;
   // Wrapperen ligger utenfor <main>, så den er synlig selv når dashbordet er
-  // i empty/login-state — det er da panelet er mest nyttig.
+  // i empty/login-state. Det er da panelet er mest nyttig.
   wrapper.hidden = false;
 
   refreshDevInfo();

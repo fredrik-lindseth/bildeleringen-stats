@@ -201,7 +201,7 @@ async function init() {
 
   if (!authStatus || !authStatus.hasAuth) return;
 
-  // Ingen data, men innlogget — start sync.
+  // Ingen data, men innlogget. Start sync.
   showStatus("Synkroniserer…");
   syncBtn.disabled = true;
 
