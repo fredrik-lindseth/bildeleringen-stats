@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseLocalISO } from "../lib/format.js";
-import { freeBlocks, fitCar, clippedSegments, solve, splitPairs } from "../lib/flex.js";
+import { freeBlocks, fitCar, clippedSegments, solve, splitPairs, ORG_BILDELERINGEN } from "../lib/flex.js";
 
 const sample = JSON.parse(
   readFileSync(fileURLToPath(new URL("./fixtures/search-sample.json", import.meta.url)))
@@ -156,6 +156,15 @@ test("solve filtrerer på categories-array (biltype-brikker)", () => {
   const wish = { ...wholeWindowWish, filters: { categories: ["Kombi", "SUV"] } };
   const out = solve(result([smaabil, kombi, suv]), wish);
   assert.deepEqual(out.whole.map((f) => f.carId).sort(), ["k", "u"]);
+});
+
+test("solve filtrerer bort andre bilkollektiv (kun Bildeleringen-org)", () => {
+  const avail = () => [seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")];
+  const bdl = car(avail(), { carId: "bdl", organizationId: ORG_BILDELERINGEN });
+  const trd = car(avail(), { carId: "trd", organizationId: "8dba8f19-c438-f278-ed7c-912ec6537cb9" });
+  const wish = { ...wholeWindowWish, filters: { organizationId: ORG_BILDELERINGEN } };
+  const out = solve(result([bdl, trd]), wish);
+  assert.deepEqual(out.whole.map((f) => f.carId), ["bdl"]);
 });
 
 test("solve filtrerer på fuels-array (drivstoff-brikker)", () => {

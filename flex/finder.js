@@ -1,6 +1,13 @@
-import { solve, splitPairs } from "./lib/flex.js";
+import { solve, splitPairs, ORG_BILDELERINGEN } from "./lib/flex.js";
 import { parseLocalISO, toLocalISO } from "./lib/format.js";
 import { getPlaces } from "./lib/storage.js";
+
+// "Uansett" avstand = hele regionen. Taket holder Bildeleringen sine
+// fjern-biler (beboer-restringerte biler i Tromsø, ~1200 km) ute av et
+// Bergen-søk, uten at brukeren må tenke på gangavstand.
+const REGION_CEILING_M = 100000;
+// 2→4 km-utvidelsen gir bare mening ved en bevisst kort radius.
+const WIDEN_MAX_M = 5000;
 
 const api = typeof browser !== "undefined" ? browser : chrome;
 
@@ -199,7 +206,7 @@ function updateFilterHint() {
   const parts = [];
   if (cats.length && cats.length < CATEGORIES.length) parts.push(`${cats.length} biltyper`);
   if (fuels.length && fuels.length < FUELS.length) parts.push(fuels.map((f) => f.toLowerCase()).join(", "));
-  if (dist.value && dist.value !== "2000") parts.push(dist.selectedOptions[0].text);
+  if (dist.value) parts.push(dist.selectedOptions[0].text);
   document.getElementById("filterHint").textContent = parts.length ? parts.join(" · ") : "";
 }
 
@@ -228,10 +235,12 @@ function readWish() {
 
   const categories = pressedValues("categoryChips");
   const fuels = pressedValues("fuelChips");
+  const distVal = document.getElementById("maxdist").value;
   const filters = {
+    organizationId: ORG_BILDELERINGEN,
     categories: categories.length ? categories : undefined,
     fuels: fuels.length && fuels.length < FUELS.length ? fuels : undefined,
-    maxDistanceM: Number(document.getElementById("maxdist").value) || undefined,
+    maxDistanceM: distVal ? Number(distVal) : REGION_CEILING_M,
   };
   return { point: place.point, earliestStart, latestEnd, durationMinutes, filters };
 }
@@ -340,7 +349,7 @@ function render(container, out, wish, searchResult) {
   // distansefilter). Justerte treff langt unna er sjelden verdt det.
   let widerAdded = false;
   const primaryMax = wish.filters.maxDistanceM;
-  if (!out.whole.length && primaryMax) {
+  if (!out.whole.length && primaryMax && primaryMax <= WIDEN_MAX_M) {
     const widerMax = primaryMax * 2;
     const widerWish = { ...wish, filters: { ...wish.filters, maxDistanceM: widerMax } };
     const widerOut = solve(searchResult, widerWish);
