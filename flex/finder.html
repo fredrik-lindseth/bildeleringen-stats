@@ -6,8 +6,45 @@
   <link rel="stylesheet" href="finder.css" />
 </head>
 <body>
-  <h1>Fleksibelt søk</h1>
-  <p id="boot">Laster…</p>
+  <header><h1>Fleksibelt søk</h1></header>
+  <main class="layout">
+    <form id="wish" class="wish">
+      <label>Posisjon
+        <select id="place"></select>
+      </label>
+      <label>Tidligst start
+        <input type="datetime-local" id="earliest" required />
+      </label>
+      <label>Senest slutt
+        <input type="datetime-local" id="latest" required />
+      </label>
+      <fieldset>
+        <legend>Varighet</legend>
+        <label><input type="radio" name="mode" value="whole" checked /> Hele vinduet</label>
+        <label><input type="radio" name="mode" value="duration" /> <input type="number" id="hours" min="1" value="24" /> timer</label>
+      </fieldset>
+      <label>Biltype
+        <select id="category">
+          <option value="">Alle</option>
+          <option>Småbil</option><option>Minibil</option><option>Kombi</option>
+          <option>Stasjonsvogn</option><option>SUV</option><option>Varebil</option>
+        </select>
+      </label>
+      <label>Drivstoff
+        <select id="fuel">
+          <option value="">Alle</option>
+          <option>Bensin</option><option>Diesel</option><option>Elektrisitet</option>
+        </select>
+      </label>
+      <label>Maks gangavstand (m)
+        <input type="number" id="maxdist" min="0" step="100" value="1500" />
+      </label>
+      <button type="submit">Søk</button>
+    </form>
+    <section id="results" class="results" aria-live="polite">
+      <p class="hint">Fyll inn og trykk Søk.</p>
+    </section>
+  </main>
   <script type="module" src="finder.js"></script>
 </body>
 </html>
