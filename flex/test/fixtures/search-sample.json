@@ -1,0 +1,37 @@
+{
+  "start": "2026-07-08T09:00:00",
+  "end": "2026-07-10T17:00:00",
+  "cars": [
+    {
+      "carId": "free-1", "carNumber": "100", "model": "Toyota Yaris",
+      "carCategory": "Småbil", "seats": 5, "hourlyRate": 41,
+      "carProperties": [{ "carPropertyName": "Bensin", "carPropertyGroup": "Drivstoff" }],
+      "location": { "id": "eks", "name": "Eksempelveien", "distance": 166 },
+      "availability": [{ "start": "2026-07-01T00:00:00", "end": "2026-07-20T00:00:00", "state": "AVAILABLE", "stateLabel": "Ledig" }]
+    },
+    {
+      "carId": "part-1", "carNumber": "200", "model": "Toyota Corolla",
+      "carCategory": "Kombi", "seats": 5, "hourlyRate": 46,
+      "carProperties": [{ "carPropertyName": "Elektrisitet", "carPropertyGroup": "Drivstoff" }],
+      "location": { "id": "test", "name": "Testgata", "distance": 844 },
+      "availability": [
+        { "start": "2026-07-08T09:00:00", "end": "2026-07-09T12:00:00", "state": "AVAILABLE", "stateLabel": "Ledig" },
+        { "start": "2026-07-09T12:00:00", "end": "2026-07-10T17:00:00", "state": "RESERVED", "stateLabel": "Reservert" }
+      ]
+    },
+    {
+      "carId": "sib-1", "carNumber": "101", "model": "Toyota Yaris",
+      "carCategory": "Småbil", "seats": 5, "hourlyRate": 41,
+      "carProperties": [{ "carPropertyName": "Bensin", "carPropertyGroup": "Drivstoff" }],
+      "location": { "id": "prove", "name": "Prøvegata", "distance": 553 },
+      "availability": [{ "start": "2026-07-01T00:00:00", "end": "2026-07-20T00:00:00", "state": "AVAILABLE", "stateLabel": "Ledig" }]
+    },
+    {
+      "carId": "far-1", "carNumber": "999", "model": "Toyota Proace",
+      "carCategory": "Varebil", "seats": 3, "hourlyRate": 60,
+      "carProperties": [{ "carPropertyName": "Diesel", "carPropertyGroup": "Drivstoff" }],
+      "location": { "id": "trd", "name": "Trondheim", "distance": 430925 },
+      "availability": [{ "start": "2026-07-01T00:00:00", "end": "2026-07-20T00:00:00", "state": "AVAILABLE", "stateLabel": "Ledig" }]
+    }
+  ]
+}

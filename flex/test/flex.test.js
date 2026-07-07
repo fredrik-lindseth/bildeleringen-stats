@@ -1,7 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { parseLocalISO } from "../lib/format.js";
 import { freeBlocks, fitCar, clippedSegments, solve } from "../lib/flex.js";
+
+const sample = JSON.parse(
+  readFileSync(fileURLToPath(new URL("./fixtures/search-sample.json", import.meta.url)))
+);
 
 const seg = (start, end, state) => ({ start, end, state, stateLabel: state });
 
@@ -158,4 +164,18 @@ test("solve fyller siblings når målbilen er opptatt", () => {
   const wish = { ...wholeWindowWish, target: { carId: "target" } };
   const out = solve(result([target, sibling]), wish);
   assert.deepEqual(out.siblings.map((f) => f.carId), ["sib"]);
+});
+
+test("solve på realistisk fixture: free-1 er whole, part-1 er adjusted, far filtreres bort", () => {
+  const wish = {
+    earliestStart: parseLocalISO("2026-07-08T09:00:00"),
+    latestEnd: parseLocalISO("2026-07-10T17:00:00"),
+    durationMinutes: null,
+    filters: { maxDistanceM: 2000 },
+  };
+  const out = solve(sample, wish);
+  assert.ok(out.whole.some((f) => f.carId === "free-1"));
+  assert.ok(out.adjusted.some((f) => f.carId === "part-1"));
+  assert.ok(!out.whole.some((f) => f.carId === "far-1"));
+  assert.ok(!out.adjusted.some((f) => f.carId === "far-1"));
 });

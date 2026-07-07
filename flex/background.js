@@ -1,4 +1,5 @@
 import { browserAPI } from "./lib/browser-polyfill.js";
+import { searchAvailability } from "./lib/search-api.js";
 
 let currentAuth = null;
 
@@ -8,8 +9,7 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message.type === "SEARCH") {
-    // Fylles ut i Task 7.
-    sendResponse({ error: "NOT_IMPLEMENTED" });
+    handleSearch(message).then(sendResponse);
     return true;
   }
   return false;
@@ -53,4 +53,19 @@ export async function getAuth() {
     }
   }
   return null;
+}
+
+async function handleSearch({ point, start, end }) {
+  const auth = await getAuth();
+  if (!auth) return { error: "NOT_LOGGED_IN" };
+  try {
+    const result = await searchAvailability(point, new Date(start), new Date(end), auth.token);
+    return { result };
+  } catch (e) {
+    if (e.message === "AUTH_EXPIRED") {
+      currentAuth = null;
+      return { error: "AUTH_EXPIRED" };
+    }
+    return { error: e.message };
+  }
 }
