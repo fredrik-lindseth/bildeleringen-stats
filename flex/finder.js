@@ -73,6 +73,8 @@ async function init() {
   document.getElementById("endTime").value = "17:00";
   buildChips("categoryChips", CATEGORIES, (v) => !CATEGORY_OFF_BY_DEFAULT.has(v));
   buildChips("fuelChips", FUELS, () => true);
+  document.getElementById("maxdist").addEventListener("change", updateFilterHint);
+  updateFilterHint();
 
   initCalendar();
   document.getElementById("startTime").addEventListener("change", updateSummary);
@@ -184,9 +186,21 @@ function buildChips(containerId, values, isOn) {
     });
     chip.addEventListener("click", () => {
       chip.setAttribute("aria-pressed", chip.getAttribute("aria-pressed") === "true" ? "false" : "true");
+      updateFilterHint();
     });
     box.append(chip);
   }
+}
+
+function updateFilterHint() {
+  const cats = pressedValues("categoryChips");
+  const fuels = pressedValues("fuelChips");
+  const dist = document.getElementById("maxdist");
+  const parts = [];
+  if (cats.length && cats.length < CATEGORIES.length) parts.push(`${cats.length} biltyper`);
+  if (fuels.length && fuels.length < FUELS.length) parts.push(fuels.map((f) => f.toLowerCase()).join(", "));
+  if (dist.value && dist.value !== "1500") parts.push(dist.selectedOptions[0].text);
+  document.getElementById("filterHint").textContent = parts.length ? parts.join(" · ") : "";
 }
 
 function pressedValues(containerId) {

@@ -16,6 +16,7 @@
 
   <main class="layout">
     <form id="wish" class="wish">
+      <div class="wish__body">
       <div class="field">
         <label class="label" for="place">Posisjon</label>
         <select id="place" class="control"></select>
@@ -56,29 +57,37 @@
         </div>
       </fieldset>
 
-      <div class="field">
-        <span class="label">Biltype</span>
-        <div class="chips" id="categoryChips" role="group" aria-label="Biltype"></div>
+      <details class="more">
+        <summary>Flere filtre <span class="more__hint" id="filterHint"></span></summary>
+        <div class="more__content">
+          <div class="field">
+            <span class="label">Biltype</span>
+            <div class="chips" id="categoryChips" role="group" aria-label="Biltype"></div>
+          </div>
+
+          <div class="field">
+            <span class="label">Drivstoff</span>
+            <div class="chips" id="fuelChips" role="group" aria-label="Drivstoff"></div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="maxdist">Maks gangavstand</label>
+            <select id="maxdist" class="control">
+              <option value="500">500 m</option>
+              <option value="1000">1 km</option>
+              <option value="1500" selected>1,5 km</option>
+              <option value="2000">2 km</option>
+              <option value="3000">3 km</option>
+              <option value="">Uansett</option>
+            </select>
+          </div>
+        </div>
+      </details>
       </div>
 
-      <div class="field">
-        <span class="label">Drivstoff</span>
-        <div class="chips" id="fuelChips" role="group" aria-label="Drivstoff"></div>
+      <div class="wish__foot">
+        <button type="submit" class="submit">Søk</button>
       </div>
-
-      <div class="field">
-        <label class="label" for="maxdist">Maks gangavstand</label>
-        <select id="maxdist" class="control">
-          <option value="500">500 m</option>
-          <option value="1000">1 km</option>
-          <option value="1500" selected>1,5 km</option>
-          <option value="2000">2 km</option>
-          <option value="3000">3 km</option>
-          <option value="">Uansett</option>
-        </select>
-      </div>
-
-      <button type="submit" class="submit">Søk</button>
     </form>
 
     <section id="results" class="results" aria-live="polite">
