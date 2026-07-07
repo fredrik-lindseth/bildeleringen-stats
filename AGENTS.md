@@ -1,5 +1,18 @@
 # Bildeleringen Stats — Prosjektkonvensjoner
 
+## Monorepo
+
+Repoet har to selvstendige utvidelser: `stats/` (denne, statistikk/analyse) og `flex/` (fleksibelt booking-søk, egen `flex/AGENTS.md`). Delte docs i `docs/`. Konvensjonene under gjelder `stats/`.
+
+## Innlasting i Firefox (gjelder begge utvidelser)
+
+Utvikling skjer via `firefox-devtools`-MCP-en, som styrer en **egen, dedikert Firefox-instans** (profil `~/.firefox-devtools-mcp-profile`), ikke din vanlige nettleser.
+
+- **UI-endringer** (HTML/JS/CSS på utvidelses-sider): IKKE reinstaller. Sidefiler leses ferskt fra disk ved hver lasting, så bare naviger/refresh fanen. Reinstall (`install_extension`) erstatter den midlertidige add-on-en og lukker fanene dens, det er det som tvinger fram manuell ny-innlasting.
+- **background.js / manifest.json**: da må du reinstallere.
+- Manuelt: bruk **"Reload"** på utvidelsen i `about:debugging`, ikke fjern + legg til på nytt (beholder UUID).
+- Hoper MCP-serverne seg opp (bridgen dropper forbindelsen ved reconnect/`/reload-plugins`): `pkill -f firefox-devtools-mcp`, så én ren server ved neste kall. Full liste over MCP-fallgruver i `flex/AGENTS.md`.
+
 ## Regler
 
 - **Ingen build-step.** Vanilla JS, HTML, CSS. Ingen bundler eller npm. Vendor-libs i `vendor/`.
