@@ -3,9 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <style>
-    body { width: 220px; font: 14px system-ui; padding: 12px; }
-    button { width: 100%; padding: 10px; cursor: pointer; }
-    #status { margin-top: 8px; color: #666; font-size: 12px; }
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #666666;
+      --accent: #51289d;
+      --button-fg: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16131c;
+        --fg: #f0f0f0;
+        --muted: #a0a0a0;
+        --accent: #b79aec;
+        --button-fg: #16131c;
+      }
+    }
+    body { width: 220px; font: 14px system-ui; padding: 12px; background: var(--bg); color: var(--fg); }
+    button { width: 100%; padding: 10px; cursor: pointer; background: var(--accent); color: var(--button-fg); border: none; border-radius: 6px; font-size: 14px; }
+    #status { margin-top: 8px; color: var(--muted); font-size: 12px; }
   </style>
 </head>
 <body>

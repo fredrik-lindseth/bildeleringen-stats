@@ -58,14 +58,20 @@ async function onSearch(e) {
   const results = document.getElementById("results");
   results.replaceChildren(el("p", { class: "hint", text: "Søker…" }));
   const wish = readWish();
-  const res = await api.runtime.sendMessage({
-    type: "SEARCH",
-    point: wish.point,
-    start: toLocalISO(wish.earliestStart),
-    end: toLocalISO(wish.latestEnd),
-  });
-  if (res.error) {
-    results.replaceChildren(el("p", { class: "hint", text: errorText(res.error) }));
+  let res;
+  try {
+    res = await api.runtime.sendMessage({
+      type: "SEARCH",
+      point: wish.point,
+      start: toLocalISO(wish.earliestStart),
+      end: toLocalISO(wish.latestEnd),
+    });
+  } catch (err) {
+    results.replaceChildren(el("p", { class: "hint", text: errorText(null) }));
+    return;
+  }
+  if (!res || res.error) {
+    results.replaceChildren(el("p", { class: "hint", text: errorText(res && res.error) }));
     return;
   }
   const out = solve(res.result, wish);
@@ -75,6 +81,7 @@ async function onSearch(e) {
 function errorText(code) {
   if (code === "NOT_LOGGED_IN") return "Åpne app.dele.no i en fane og logg inn først.";
   if (code === "AUTH_EXPIRED") return "Innloggingen utløp. Last app.dele.no på nytt.";
+  if (!code) return "Fikk ikke svar fra utvidelsen. Sjekk at app.dele.no er åpen, og prøv igjen.";
   return `Noe gikk galt: ${code}`;
 }
 
