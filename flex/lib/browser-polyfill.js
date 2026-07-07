@@ -1,5 +1,5 @@
 // Thin wrapper: use browser.* (Firefox) with chrome.* fallback
-const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+const browserAPI = typeof browser !== "undefined" ? browser : typeof chrome !== "undefined" ? chrome : undefined;
 
 // Promisify chrome.* callback APIs if needed
 function promisify(fn) {
