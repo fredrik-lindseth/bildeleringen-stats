@@ -372,6 +372,14 @@ body {
   padding: 28px 24px;
   text-align: center;
 }
+.hint--action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.hint--action button { cursor: pointer; }
+.hint--action button:disabled { opacity: 0.6; cursor: default; }
 
 .bucket { display: flex; flex-direction: column; gap: 10px; }
 .bucket__title {
@@ -390,6 +398,7 @@ body {
 .bucket--ok .bucket__dot { background: var(--color-available); }
 .bucket--adjust .bucket__dot { background: var(--color-adjust); }
 .bucket--sibling .bucket__dot { background: var(--color-sibling); }
+.bucket--wider .bucket__dot { background: var(--color-sibling); }
 .bucket--split .bucket__dot { background: var(--color-accent); }
 .bucket__count {
   font-size: 12px;

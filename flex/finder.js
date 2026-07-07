@@ -199,7 +199,7 @@ function updateFilterHint() {
   const parts = [];
   if (cats.length && cats.length < CATEGORIES.length) parts.push(`${cats.length} biltyper`);
   if (fuels.length && fuels.length < FUELS.length) parts.push(fuels.map((f) => f.toLowerCase()).join(", "));
-  if (dist.value && dist.value !== "1500") parts.push(dist.selectedOptions[0].text);
+  if (dist.value && dist.value !== "2000") parts.push(dist.selectedOptions[0].text);
   document.getElementById("filterHint").textContent = parts.length ? parts.join(" · ") : "";
 }
 
@@ -236,8 +236,12 @@ function readWish() {
   return { point: place.point, earliestStart, latestEnd, durationMinutes, filters };
 }
 
-async function onSearch(e) {
+function onSearch(e) {
   e.preventDefault();
+  runSearch();
+}
+
+async function runSearch() {
   const results = document.getElementById("results");
   const wish = readWish();
 
@@ -256,21 +260,59 @@ async function onSearch(e) {
       end: toLocalISO(wish.latestEnd),
     });
   } catch (err) {
-    results.replaceChildren(el("p", { class: "hint", text: errorText(null) }));
+    renderError(results, null);
     return;
   }
   if (!res || res.error) {
-    results.replaceChildren(el("p", { class: "hint", text: errorText(res && res.error) }));
+    renderError(results, res && res.error);
     return;
   }
   render(results, solve(res.result, wish), wish, res.result);
 }
 
-function errorText(code) {
-  if (code === "NOT_LOGGED_IN") return "Åpne app.dele.no i en fane og logg inn først.";
-  if (code === "AUTH_EXPIRED") return "Innloggingen utløp. Last app.dele.no på nytt.";
-  if (!code) return "Fikk ikke svar fra utvidelsen. Sjekk at app.dele.no er åpen, og prøv igjen.";
-  return `Noe gikk galt: ${code}`;
+function renderError(results, code) {
+  // Manglende innlogging er den vanlige feilen: token bor i app.dele.no sin
+  // localStorage, så vi trenger en fane der. Åpne den i en ufokusert
+  // bakgrunnsfane og kjør søket på nytt automatisk når innloggingen er lest.
+  if (code === "NOT_LOGGED_IN" || code === "AUTH_EXPIRED") {
+    autoConnect(results);
+    return;
+  }
+  const text = code
+    ? `Noe gikk galt: ${code}`
+    : "Fikk ikke svar fra utvidelsen. Sjekk at app.dele.no er åpen, og prøv igjen.";
+  results.replaceChildren(el("p", { class: "hint", text }));
+}
+
+async function autoConnect(results) {
+  results.replaceChildren(el("p", { class: "hint", text: "Kobler til app.dele.no…" }));
+  // Ikke lag duplikatfaner: åpne bare hvis ingen app.dele.no-fane finnes.
+  const existing = await api.tabs.query({ url: "*://app.dele.no/*" }).catch(() => []);
+  if (!existing.length) {
+    await api.tabs.create({ url: "https://app.dele.no/", active: false });
+  }
+  for (let i = 0; i < 15; i++) {
+    await new Promise((r) => setTimeout(r, 800));
+    const s = await api.runtime.sendMessage({ type: "GET_AUTH_STATUS" }).catch(() => null);
+    if (s && s.hasAuth) { runSearch(); return; }
+  }
+  // Timeout: sannsynligvis faktisk ikke innlogget. Gi en fokusert vei inn.
+  const box = el("div", { class: "hint hint--action" }, [
+    el("p", { text: "Vi åpnet app.dele.no, men fant ingen innlogging. Logg inn der, så prøver vi igjen." }),
+  ]);
+  const btn = el("button", { type: "button", class: "car__open", text: "Gå til app.dele.no →" });
+  btn.addEventListener("click", async () => {
+    const tabs = await api.tabs.query({ url: "*://app.dele.no/*" }).catch(() => []);
+    if (tabs.length) await api.tabs.update(tabs[0].id, { active: true });
+    else await api.tabs.create({ url: "https://app.dele.no/", active: true });
+  });
+  box.append(btn);
+  results.replaceChildren(box);
+}
+
+function fmtKm(m) {
+  const km = m / 1000;
+  return Number.isInteger(km) ? String(km) : km.toFixed(1).replace(".", ",");
 }
 
 function render(container, out, wish, searchResult) {
@@ -278,11 +320,28 @@ function render(container, out, wish, searchResult) {
   bucket(container, "Ledig hele ditt vindu", out.whole, wish, "ok");
   bucket(container, "Passer med justering", out.adjusted, wish, "adjust");
   if (out.siblings.length) bucket(container, "Lignende bil i nærheten", out.siblings, wish, "sibling");
+
+  // Sekundærsøk: ingen perfekt treff innen valgt radius → utvid til det dobbelte
+  // og vis ringen utenfor (samme /api/search-data, bare mildere distansefilter).
+  let widerAdded = false;
+  const primaryMax = wish.filters.maxDistanceM;
+  if (!out.whole.length && primaryMax) {
+    const widerMax = primaryMax * 2;
+    const widerWish = { ...wish, filters: { ...wish.filters, maxDistanceM: widerMax } };
+    const widerOut = solve(searchResult, widerWish);
+    const ring = (list) => list.filter((f) => (f.location.distance ?? Infinity) > primaryMax);
+    const extra = [...ring(widerOut.whole), ...ring(widerOut.adjusted)];
+    if (extra.length) {
+      bucket(container, `Litt lenger unna (${fmtKm(primaryMax)}–${fmtKm(widerMax)} km)`, extra, wish, "wider");
+      widerAdded = true;
+    }
+  }
+
   if (!out.whole.length && wish.durationMinutes == null) {
     const pairs = splitPairs(searchResult, wish);
     if (pairs.length) renderSplits(container, pairs);
   }
-  if (!out.whole.length && !out.adjusted.length && !out.siblings.length) {
+  if (!out.whole.length && !out.adjusted.length && !out.siblings.length && !widerAdded) {
     container.append(el("p", { class: "hint",
       text: "Ingen biler passer i dette tidsrommet. Prøv et større vindu, lengre gangavstand, eller flere biltyper." }));
   }
