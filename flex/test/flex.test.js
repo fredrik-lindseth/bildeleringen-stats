@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseLocalISO } from "../lib/format.js";
-import { freeBlocks, fitCar, clippedSegments } from "../lib/flex.js";
+import { freeBlocks, fitCar, clippedSegments, solve } from "../lib/flex.js";
 
 const seg = (start, end, state) => ({ start, end, state, stateLabel: state });
 
@@ -117,4 +117,45 @@ test("clippedSegments dropper segmenter uten overlapp", () => {
     parseLocalISO("2026-07-09T00:00:00")
   );
   assert.equal(segs.length, 0);
+});
+
+function result(cars) { return { cars }; }
+
+test("solve deler i whole og adjusted", () => {
+  const freeAll = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")], { carId: "free" });
+  const partial = car([seg("2026-07-08T09:00:00", "2026-07-09T00:00:00", "AVAILABLE"),
+                       seg("2026-07-09T00:00:00", "2026-07-10T17:00:00", "RESERVED")], { carId: "part" });
+  const out = solve(result([partial, freeAll]), wholeWindowWish);
+  assert.deepEqual(out.whole.map((f) => f.carId), ["free"]);
+  assert.deepEqual(out.adjusted.map((f) => f.carId), ["part"]);
+});
+
+test("solve filtrerer på kategori og maks distanse", () => {
+  const near = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")],
+                   { carId: "near", location: { name: "A", distance: 200, id: "A" } });
+  const far = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")],
+                  { carId: "far", location: { name: "B", distance: 5000, id: "B" } });
+  const suv = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")],
+                  { carId: "suv", carCategory: "SUV" });
+  const wish = { ...wholeWindowWish, filters: { category: "Småbil", maxDistanceM: 1000 } };
+  const out = solve(result([near, far, suv]), wish);
+  assert.deepEqual(out.whole.map((f) => f.carId), ["near"]);
+});
+
+test("solve rangerer whole nærmest først", () => {
+  const a = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")],
+                { carId: "a", location: { name: "A", distance: 800, id: "A" } });
+  const b = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")],
+                { carId: "b", location: { name: "B", distance: 150, id: "B" } });
+  const out = solve(result([a, b]), wholeWindowWish);
+  assert.deepEqual(out.whole.map((f) => f.carId), ["b", "a"]);
+});
+
+test("solve fyller siblings når målbilen er opptatt", () => {
+  const target = car([seg("2026-07-08T09:00:00", "2026-07-10T17:00:00", "RESERVED")], { carId: "target" });
+  const sibling = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")],
+                      { carId: "sib", location: { name: "Nær", distance: 300, id: "N" } });
+  const wish = { ...wholeWindowWish, target: { carId: "target" } };
+  const out = solve(result([target, sibling]), wish);
+  assert.deepEqual(out.siblings.map((f) => f.carId), ["sib"]);
 });

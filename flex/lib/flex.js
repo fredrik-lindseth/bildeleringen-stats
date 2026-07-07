@@ -102,3 +102,61 @@ export function fitCar(car, wish) {
            coversWholeWindow: false, shiftMinutes: (longest.start - wish.earliestStart) / MS_PER_MINUTE,
            bestBlockMinutes, shortfallMinutes: D - bestBlockMinutes };
 }
+
+function matchesFilters(car, filters = {}) {
+  if (filters.category && car.carCategory !== filters.category) return false;
+  if (filters.seats && (car.seats || 0) < filters.seats) return false;
+  if (filters.fuel) {
+    const fuels = (car.carProperties || [])
+      .filter((p) => p.carPropertyGroup === "Drivstoff")
+      .map((p) => p.carPropertyName);
+    if (!fuels.includes(filters.fuel)) return false;
+  }
+  if (filters.carIds && filters.carIds.length && !filters.carIds.includes(car.carId)) return false;
+  return true;
+}
+
+function withinDistance(car, filters = {}) {
+  if (!filters.maxDistanceM) return true;
+  const d = car.location?.distance;
+  return d == null ? false : d <= filters.maxDistanceM;
+}
+
+function rankFits(list) {
+  list.sort((a, b) => {
+    if (a.coversWholeWindow !== b.coversWholeWindow) return a.coversWholeWindow ? -1 : 1;
+    if (a.shiftMinutes !== b.shiftMinutes) return a.shiftMinutes - b.shiftMinutes;
+    if (a.bestBlockMinutes !== b.bestBlockMinutes) return b.bestBlockMinutes - a.bestBlockMinutes;
+    return (a.location.distance ?? Infinity) - (b.location.distance ?? Infinity);
+  });
+}
+
+function siblingSuggestions(fits, wish) {
+  const t = wish.target;
+  const targetFit = t.carId ? fits.find((f) => f.carId === t.carId) : null;
+  if (targetFit && targetFit.kind === "fits" && targetFit.coversWholeWindow) return [];
+  const model = t.model || targetFit?.model;
+  const category = t.category || targetFit?.category;
+  const siblings = fits.filter((f) => {
+    if (t.carId && f.carId === t.carId) return false;
+    if (f.kind !== "fits") return false;
+    return model ? f.model === model : f.category === category;
+  });
+  rankFits(siblings);
+  return siblings;
+}
+
+export function solve(searchResult, wish) {
+  const cars = (searchResult.cars || [])
+    .filter((c) => matchesFilters(c, wish.filters))
+    .filter((c) => withinDistance(c, wish.filters));
+  const fits = cars.map((c) => fitCar(c, wish));
+
+  const whole = fits.filter((f) => f.kind === "fits" && f.coversWholeWindow);
+  const adjusted = fits.filter((f) => (f.kind === "fits" && !f.coversWholeWindow) || f.kind === "short");
+  rankFits(whole);
+  rankFits(adjusted);
+
+  const siblings = wish.target ? siblingSuggestions(fits, wish) : [];
+  return { whole, adjusted, siblings };
+}
