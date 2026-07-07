@@ -148,6 +148,26 @@ test("solve filtrerer på kategori og maks distanse", () => {
   assert.deepEqual(out.whole.map((f) => f.carId), ["near"]);
 });
 
+test("solve filtrerer på categories-array (biltype-brikker)", () => {
+  const avail = () => [seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")];
+  const smaabil = car(avail(), { carId: "s", carCategory: "Småbil" });
+  const kombi = car(avail(), { carId: "k", carCategory: "Kombi" });
+  const suv = car(avail(), { carId: "u", carCategory: "SUV" });
+  const wish = { ...wholeWindowWish, filters: { categories: ["Kombi", "SUV"] } };
+  const out = solve(result([smaabil, kombi, suv]), wish);
+  assert.deepEqual(out.whole.map((f) => f.carId).sort(), ["k", "u"]);
+});
+
+test("solve filtrerer på fuels-array (drivstoff-brikker)", () => {
+  const prop = (name) => [{ carPropertyName: name, carPropertyGroup: "Drivstoff" }];
+  const avail = () => [seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")];
+  const el = car(avail(), { carId: "el", carProperties: prop("Elektrisitet") });
+  const bensin = car(avail(), { carId: "be", carProperties: prop("Bensin") });
+  const wish = { ...wholeWindowWish, filters: { fuels: ["Elektrisitet"] } };
+  const out = solve(result([el, bensin]), wish);
+  assert.deepEqual(out.whole.map((f) => f.carId), ["el"]);
+});
+
 test("solve rangerer whole nærmest først", () => {
   const a = car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")],
                 { carId: "a", location: { name: "A", distance: 800, id: "A" } });

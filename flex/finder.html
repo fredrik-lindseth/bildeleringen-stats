@@ -2,49 +2,90 @@
 <html lang="nb">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bildeleringen Fleksibel</title>
   <link rel="stylesheet" href="finder.css" />
 </head>
 <body>
-  <header><h1>Fleksibelt søk</h1></header>
+  <header class="header">
+    <div class="header__inner">
+      <span class="header__title">Fleksibelt søk</span>
+      <span class="header__sub">Finn når bilen faktisk er ledig</span>
+    </div>
+  </header>
+
   <main class="layout">
     <form id="wish" class="wish">
-      <label>Posisjon
-        <select id="place"></select>
-      </label>
-      <label>Tidligst start
-        <input type="datetime-local" id="earliest" required />
-      </label>
-      <label>Senest slutt
-        <input type="datetime-local" id="latest" required />
-      </label>
-      <fieldset>
+      <div class="field">
+        <label class="label" for="place">Posisjon</label>
+        <select id="place" class="control"></select>
+      </div>
+
+      <div class="field">
+        <span class="label">Tidsrom</span>
+        <div class="cal">
+          <div class="cal__head">
+            <button type="button" class="cal__nav" id="calPrev" aria-label="Forrige måned">‹</button>
+            <span class="cal__month" id="calMonth"></span>
+            <button type="button" class="cal__nav" id="calNext" aria-label="Neste måned">›</button>
+          </div>
+          <div class="cal__grid" id="calGrid"></div>
+        </div>
+        <div class="times">
+          <div>
+            <span class="mini">Fra kl.</span>
+            <select id="startTime" class="control" aria-label="Starttid"></select>
+          </div>
+          <div>
+            <span class="mini">Til kl.</span>
+            <select id="endTime" class="control" aria-label="Slutttid"></select>
+          </div>
+        </div>
+        <div class="range-summary" id="rangeSummary" aria-live="polite"></div>
+      </div>
+
+      <fieldset class="field duration">
         <legend>Varighet</legend>
-        <label><input type="radio" name="mode" value="whole" checked /> Hele vinduet</label>
-        <label><input type="radio" name="mode" value="duration" /> <input type="number" id="hours" min="1" value="24" aria-label="Antall timer" /> timer</label>
+        <div class="seg">
+          <label><input type="radio" name="mode" value="whole" checked /> Hele vinduet</label>
+          <label><input type="radio" name="mode" value="duration" /> Bestemt lengde</label>
+        </div>
+        <div class="duration__hours is-disabled" id="hoursRow">
+          <input type="number" id="hours" class="control" min="1" value="24" aria-label="Antall timer" />
+          <span>timer i vinduet</span>
+        </div>
       </fieldset>
-      <label>Biltype
-        <select id="category">
-          <option value="">Alle</option>
-          <option>Småbil</option><option>Minibil</option><option>Kombi</option>
-          <option>Stasjonsvogn</option><option>SUV</option><option>Varebil</option>
+
+      <div class="field">
+        <span class="label">Biltype</span>
+        <div class="chips" id="categoryChips" role="group" aria-label="Biltype"></div>
+      </div>
+
+      <div class="field">
+        <span class="label">Drivstoff</span>
+        <div class="chips" id="fuelChips" role="group" aria-label="Drivstoff"></div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="maxdist">Maks gangavstand</label>
+        <select id="maxdist" class="control">
+          <option value="500">500 m</option>
+          <option value="1000">1 km</option>
+          <option value="1500" selected>1,5 km</option>
+          <option value="2000">2 km</option>
+          <option value="3000">3 km</option>
+          <option value="">Uansett</option>
         </select>
-      </label>
-      <label>Drivstoff
-        <select id="fuel">
-          <option value="">Alle</option>
-          <option>Bensin</option><option>Diesel</option><option>Elektrisitet</option>
-        </select>
-      </label>
-      <label>Maks gangavstand (m)
-        <input type="number" id="maxdist" min="0" step="100" value="1500" />
-      </label>
-      <button type="submit">Søk</button>
+      </div>
+
+      <button type="submit" class="submit">Søk</button>
     </form>
+
     <section id="results" class="results" aria-live="polite">
-      <p class="hint">Fyll inn og trykk Søk.</p>
+      <p class="hint">Velg tidsrom og trykk Søk.</p>
     </section>
   </main>
+
   <script type="module" src="finder.js"></script>
 </body>
 </html>

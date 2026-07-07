@@ -103,15 +103,18 @@ export function fitCar(car, wish) {
            bestBlockMinutes, shortfallMinutes: D - bestBlockMinutes };
 }
 
+function carFuels(car) {
+  return (car.carProperties || [])
+    .filter((p) => p.carPropertyGroup === "Drivstoff")
+    .map((p) => p.carPropertyName);
+}
+
 function matchesFilters(car, filters = {}) {
   if (filters.category && car.carCategory !== filters.category) return false;
+  if (filters.categories && filters.categories.length && !filters.categories.includes(car.carCategory)) return false;
   if (filters.seats && (car.seats || 0) < filters.seats) return false;
-  if (filters.fuel) {
-    const fuels = (car.carProperties || [])
-      .filter((p) => p.carPropertyGroup === "Drivstoff")
-      .map((p) => p.carPropertyName);
-    if (!fuels.includes(filters.fuel)) return false;
-  }
+  if (filters.fuel && !carFuels(car).includes(filters.fuel)) return false;
+  if (filters.fuels && filters.fuels.length && !carFuels(car).some((f) => filters.fuels.includes(f))) return false;
   if (filters.carIds && filters.carIds.length && !filters.carIds.includes(car.carId)) return false;
   return true;
 }
