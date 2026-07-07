@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseLocalISO } from "../lib/format.js";
-import { freeBlocks } from "../lib/flex.js";
+import { freeBlocks, fitCar, clippedSegments } from "../lib/flex.js";
 
 const seg = (start, end, state) => ({ start, end, state, stateLabel: state });
 
@@ -42,4 +42,79 @@ test("freeBlocks behandler UNAVAILABLE som ikke-ledig", () => {
     parseLocalISO("2026-07-08T00:00:00")
   );
   assert.equal(blocks.length, 0);
+});
+
+const car = (availability, extra = {}) => ({
+  carId: "c1", carNumber: "948", model: "Toyota Yaris", carCategory: "Småbil",
+  seats: 5, hourlyRate: 41, carProperties: [], location: { name: "Eksempelveien", distance: 166, id: "L" },
+  availability, ...extra,
+});
+
+const wholeWindowWish = {
+  earliestStart: parseLocalISO("2026-07-08T09:00:00"),
+  latestEnd: parseLocalISO("2026-07-10T17:00:00"),
+  durationMinutes: null,
+  filters: {},
+};
+
+test("fitCar: fri hele vinduet -> fits + coversWholeWindow", () => {
+  const f = fitCar(car([seg("2026-07-01T00:00:00", "2026-07-20T00:00:00", "AVAILABLE")]), wholeWindowWish);
+  assert.equal(f.kind, "fits");
+  assert.equal(f.coversWholeWindow, true);
+  assert.equal(f.shiftMinutes, 0);
+});
+
+test("fitCar: opptatt i midten, hele-vinduet-modus -> short", () => {
+  const f = fitCar(car([
+    seg("2026-07-08T09:00:00", "2026-07-09T12:00:00", "AVAILABLE"),
+    seg("2026-07-09T12:00:00", "2026-07-10T17:00:00", "RESERVED"),
+  ]), wholeWindowWish);
+  assert.equal(f.kind, "short");
+  assert.equal(f.coversWholeWindow, false);
+  assert.ok(f.shortfallMinutes > 0);
+});
+
+test("fitCar: varighetsmodus finner blokk >= varighet og skyver start", () => {
+  const wish = {
+    earliestStart: parseLocalISO("2026-07-08T09:00:00"),
+    latestEnd: parseLocalISO("2026-07-12T09:00:00"),
+    durationMinutes: 24 * 60, // 1 døgn
+    filters: {},
+  };
+  const f = fitCar(car([
+    seg("2026-07-08T09:00:00", "2026-07-09T00:00:00", "RESERVED"),
+    seg("2026-07-09T00:00:00", "2026-07-12T09:00:00", "AVAILABLE"),
+  ]), wish);
+  assert.equal(f.kind, "fits");
+  assert.equal(f.coversWholeWindow, false);
+  assert.equal(f.proposed.start.getTime(), parseLocalISO("2026-07-09T00:00:00").getTime());
+  assert.equal(f.proposed.end.getTime(), parseLocalISO("2026-07-10T00:00:00").getTime());
+  assert.ok(f.shiftMinutes > 0);
+});
+
+test("fitCar: ingen ledig tid -> none", () => {
+  const f = fitCar(car([seg("2026-07-08T09:00:00", "2026-07-10T17:00:00", "RESERVED")]), wholeWindowWish);
+  assert.equal(f.kind, "none");
+  assert.equal(f.proposed, null);
+});
+
+test("fitCar returnerer segments (alle states) klippet til vinduet", () => {
+  const f = fitCar(car([
+    seg("2026-07-01T00:00:00", "2026-07-09T00:00:00", "AVAILABLE"),
+    seg("2026-07-09T00:00:00", "2026-07-20T00:00:00", "RESERVED"),
+  ]), wholeWindowWish);
+  assert.equal(f.segments.length, 2);
+  assert.equal(f.segments[0].state, "AVAILABLE");
+  // klippet til vindusstart 09:00 08.07, ikke 01.07
+  assert.equal(f.segments[0].start.getTime(), wholeWindowWish.earliestStart.getTime());
+  assert.equal(f.segments[1].state, "RESERVED");
+});
+
+test("clippedSegments dropper segmenter uten overlapp", () => {
+  const segs = clippedSegments(
+    [seg("2026-07-01T00:00:00", "2026-07-02T00:00:00", "RESERVED")],
+    parseLocalISO("2026-07-08T00:00:00"),
+    parseLocalISO("2026-07-09T00:00:00")
+  );
+  assert.equal(segs.length, 0);
 });
