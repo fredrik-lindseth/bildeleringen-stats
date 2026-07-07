@@ -44,6 +44,7 @@ Utvidelsen drives via `firefox-devtools`-MCP-en, som styrer en **egen, dedikert 
 - Returnerer **alle** biler i org (~356), sortert med `location.distance` (meter), men ikke rent distansesortert. Distansefilter gjøres klientside. Derfor: sekundærsøk med større radius koster ingen ekstra nettverkskall, bare kjør `solve` på nytt med mildere `maxDistanceM`.
 - Hver bil har `availability[]`: sammenhengende segmenter med `state` = `AVAILABLE` / `RESERVED` / `UNAVAILABLE`. Kun `AVAILABLE` er bookbart. Segmenter er ikke klippet til søkevinduet og er snappet til hel time.
 - `carProperties[]` bruker `carPropertyGroup` / `carPropertyName` (f.eks. group "Drivstoff") — IKKE `groupKey`/`group` som reservasjons-API-et i stats.
+- **Flere organisasjoner:** søket returnerer biler fra alle bilkollektiv på dele.no. Vi filtrerer alltid til Bildeleringen (`ORG_BILDELERINGEN` i `lib/flex.js`) + et region-tak på 100 km (`REGION_CEILING_M` i `finder.js`) for å holde både Trondheim Bilkollektiv og Bildeleringen sine beboer-restringerte Tromsø-biler ute. Org-tabell og Tromsø-jokeren i `../docs/api/README.md`.
 
 ## Gotchas (lært, ikke gjenoppdages)
 
