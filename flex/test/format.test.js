@@ -18,6 +18,13 @@ test("parseLocalISO godtar manglende sekunder", () => {
   assert.equal(toLocalISO(parseLocalISO("2026-07-08T09:00")), "2026-07-08T09:00:00");
 });
 
+test("parseLocalISO godtar brøkdels-sekunder (API kan gi mikrosekunder)", () => {
+  const d = parseLocalISO("2026-07-07T18:44:00.113787");
+  assert.equal(d.getHours(), 18);
+  assert.equal(d.getMinutes(), 44);
+  assert.equal(d.getSeconds(), 0);
+});
+
 test("parseLocalISO kaster på ugyldig streng", () => {
   assert.throws(() => parseLocalISO("ikke en dato"));
 });

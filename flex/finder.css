@@ -409,6 +409,20 @@ body {
   border-radius: var(--radius-pill);
   padding: 1px 9px;
 }
+.more-btn {
+  align-self: flex-start;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 13px;
+  cursor: pointer;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.more-btn:hover { color: var(--color-text); border-color: var(--color-text-tertiary); }
+.more-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 /* ---- Car card ---- */
 .car {

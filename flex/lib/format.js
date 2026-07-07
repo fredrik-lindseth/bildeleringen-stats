@@ -13,7 +13,10 @@ export function toLocalISO(date) {
 }
 
 export function parseLocalISO(s) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+  // Godta valgfrie brøkdels-sekunder: API-et kan gi segmentgrenser med
+  // mikrosekundpresisjon (f.eks. "2026-07-07T18:44:00.113787" for en tur
+  // som starter nå). Vi jobber på minutt-nivå, så brøkdelen ignoreres.
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/.exec(s);
   if (!m) throw new Error(`Ugyldig lokal ISO: ${s}`);
   const [, y, mo, d, h, mi, se] = m;
   return new Date(

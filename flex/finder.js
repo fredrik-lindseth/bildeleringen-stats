@@ -70,7 +70,7 @@ async function init() {
 
   buildTimeOptions();
   document.getElementById("startTime").value = "09:00";
-  document.getElementById("endTime").value = "17:00";
+  document.getElementById("endTime").value = "21:00";
   buildChips("categoryChips", CATEGORIES, (v) => !CATEGORY_OFF_BY_DEFAULT.has(v));
   buildChips("fuelChips", FUELS, () => true);
   document.getElementById("maxdist").addEventListener("change", updateFilterHint);
@@ -315,22 +315,36 @@ function fmtKm(m) {
   return Number.isInteger(km) ? String(km) : km.toFixed(1).replace(".", ",");
 }
 
+// Et "short"-treff er boss når den lengste ledige blokken dekker en bitteliten
+// del av det du faktisk trenger (f.eks. 1t av et flerdøgnsvindu). Skjul disse
+// bak «Vis alle» i stedet for å fylle bunnen med ubrukelige rader.
+const WEAK_RATIO = 0.4;
+function isWeak(f, wish) {
+  if (f.kind !== "short") return false;
+  const need = wish.durationMinutes ?? (wish.latestEnd - wish.earliestStart) / 60000;
+  return f.bestBlockMinutes < need * WEAK_RATIO;
+}
+
 function render(container, out, wish, searchResult) {
   container.replaceChildren();
   bucket(container, "Ledig hele ditt vindu", out.whole, wish, "ok");
-  bucket(container, "Passer med justering", out.adjusted, wish, "adjust");
+
+  const strong = out.adjusted.filter((f) => !isWeak(f, wish));
+  const weak = out.adjusted.filter((f) => isWeak(f, wish));
+  bucket(container, "Passer med justering", strong, wish, "adjust", weak);
+
   if (out.siblings.length) bucket(container, "Lignende bil i nærheten", out.siblings, wish, "sibling");
 
   // Sekundærsøk: ingen perfekt treff innen valgt radius → utvid til det dobbelte
-  // og vis ringen utenfor (samme /api/search-data, bare mildere distansefilter).
+  // og vis KUN perfekte treff i ringen utenfor (samme /api/search-data, mildere
+  // distansefilter). Justerte treff langt unna er sjelden verdt det.
   let widerAdded = false;
   const primaryMax = wish.filters.maxDistanceM;
   if (!out.whole.length && primaryMax) {
     const widerMax = primaryMax * 2;
     const widerWish = { ...wish, filters: { ...wish.filters, maxDistanceM: widerMax } };
     const widerOut = solve(searchResult, widerWish);
-    const ring = (list) => list.filter((f) => (f.location.distance ?? Infinity) > primaryMax);
-    const extra = [...ring(widerOut.whole), ...ring(widerOut.adjusted)];
+    const extra = widerOut.whole.filter((f) => (f.location.distance ?? Infinity) > primaryMax);
     if (extra.length) {
       bucket(container, `Litt lenger unna (${fmtKm(primaryMax)}–${fmtKm(widerMax)} km)`, extra, wish, "wider");
       widerAdded = true;
@@ -347,16 +361,30 @@ function render(container, out, wish, searchResult) {
   }
 }
 
-function bucket(container, title, fits, wish, variant) {
-  if (!fits.length) return;
+function bucketTitle(title, count) {
+  return el("h2", { class: "bucket__title" }, [
+    el("span", { class: "bucket__dot" }),
+    el("span", { text: title }),
+    el("span", { class: "bucket__count", text: String(count) }),
+  ]);
+}
+
+// `weak` (valgfri): svakere treff som skjules bak en «Vis alle»-knapp.
+function bucket(container, title, fits, wish, variant, weak = []) {
+  if (!fits.length && !weak.length) return;
   const box = el("section", { class: `bucket bucket--${variant}` }, [
-    el("h2", { class: "bucket__title" }, [
-      el("span", { class: "bucket__dot" }),
-      el("span", { text: title }),
-      el("span", { class: "bucket__count", text: String(fits.length) }),
-    ]),
+    bucketTitle(title, fits.length + weak.length),
   ]);
   for (const f of fits) box.append(carCard(f, wish));
+  if (weak.length) {
+    const more = el("button", { type: "button", class: "more-btn",
+      text: `Vis ${weak.length} med kort ledig tid` });
+    more.addEventListener("click", () => {
+      for (const f of weak) box.insertBefore(carCard(f, wish), more);
+      more.remove();
+    });
+    box.append(more);
+  }
   container.append(box);
 }
 
