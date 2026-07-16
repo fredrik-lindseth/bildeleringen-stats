@@ -21,11 +21,13 @@
     }
     body { width: 220px; font: 14px system-ui; padding: 12px; background: var(--bg); color: var(--fg); }
     button { width: 100%; padding: 10px; cursor: pointer; background: var(--accent); color: var(--button-fg); border: none; border-radius: 6px; font-size: 14px; }
+    button + button { margin-top: 8px; }
     #status { margin-top: 8px; color: var(--muted); font-size: 12px; }
   </style>
 </head>
 <body>
   <button id="open">Åpne fleksibelt søk</button>
+  <button id="open-watches">Mine overvåkninger</button>
   <div id="status">Sjekker innlogging…</div>
   <script src="popup.js"></script>
 </body>

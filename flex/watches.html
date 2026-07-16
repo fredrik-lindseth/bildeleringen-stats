@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mine overvåkninger — Bildeleringen Fleksibel</title>
+  <link rel="stylesheet" href="finder.css" />
+  <style>
+    .watches { max-width: 760px; margin: 0 auto; padding: 24px; }
+    .watches h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.01em; color: var(--color-text-tertiary); margin: 24px 0 12px; }
+    #watch-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    #watch-list li { background: var(--color-surface); box-shadow: var(--shadow-card); border-radius: var(--radius-md); padding: 12px 14px; }
+    #watch-list .muted { color: var(--color-text-secondary); font-size: 13px; }
+    #watch-list button, .settings button { padding: 6px 12px; cursor: pointer; background: var(--color-accent); color: var(--color-accent-text); border: none; border-radius: var(--radius-sm); font-size: 13px; }
+    #watch-list label { margin: 0 8px; font-size: 13px; }
+    .settings { margin-top: 8px; background: var(--color-surface); box-shadow: var(--shadow-card); border-radius: var(--radius-md); padding: 16px; }
+    .settings label { display: block; margin-bottom: 10px; font-size: 13px; color: var(--color-text-secondary); }
+    .settings input { width: 100%; padding: 8px 10px; margin-top: 4px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); }
+    .settings button { margin-right: 8px; }
+    #set-msg { margin-top: 8px; font-size: 13px; color: var(--color-success); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header__inner">
+      <span class="header__title">Mine overvåkninger</span>
+      <span class="header__sub">Varsler når en bil blir ledig</span>
+    </div>
+  </header>
+  <main class="watches">
+    <ul id="watch-list" aria-live="polite"></ul>
+    <section class="settings">
+      <h2>Varsel-innstillinger</h2>
+      <label>Backend-URL <input id="set-url" type="url" placeholder="https://varsel.example.com" /></label>
+      <label>Abonnent-token <input id="set-token" type="password" autocomplete="off" /></label>
+      <label>Poll-intervall (min) <input id="set-poll" type="number" min="1" value="15" /></label>
+      <button id="set-save" type="button">Lagre</button>
+      <button id="poll-now" type="button">Sjekk nå</button>
+      <p id="set-msg" role="status"></p>
+    </section>
+  </main>
+  <script type="module" src="watches.js"></script>
+</body>
+</html>
