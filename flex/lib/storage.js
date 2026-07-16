@@ -35,3 +35,27 @@ export async function getFavoriteCarIds() {
 export async function saveFavoriteCarIds(ids) {
   await storage.set({ [FAV_KEY]: ids });
 }
+
+const WATCHES_KEY = "watches";
+const SETTINGS_KEY = "notifySettings"; // { backendUrl, backendToken, pollMinutes }
+
+export async function getWatches() {
+  const { [WATCHES_KEY]: w } = await storage.get(WATCHES_KEY);
+  return w || [];
+}
+
+export async function setWatches(list) {
+  await storage.set({ [WATCHES_KEY]: list });
+  return list;
+}
+
+export async function getSettings() {
+  const { [SETTINGS_KEY]: s } = await storage.get(SETTINGS_KEY);
+  return { backendUrl: "", backendToken: "", pollMinutes: 15, ...(s || {}) };
+}
+
+export async function saveSettings(patch) {
+  const next = { ...(await getSettings()), ...patch };
+  await storage.set({ [SETTINGS_KEY]: next });
+  return next;
+}

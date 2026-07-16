@@ -1,7 +1,14 @@
 import { browserAPI } from "./lib/browser-polyfill.js";
 import { searchAvailability } from "./lib/search-api.js";
+import { getWatches, setWatches, getSettings, saveSettings } from "./lib/storage.js";
 
 let currentAuth = null;
+
+// Stabil id uten Math.random (unngår kollisjon innen samme ms).
+let idSeq = 0;
+function newId() {
+  return `${Date.now()}-${idSeq++}`;
+}
 
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "GET_AUTH_STATUS") {
@@ -10,6 +17,36 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.type === "SEARCH") {
     handleSearch(message).then(sendResponse);
+    return true;
+  }
+  if (message.type === "GET_WATCHES") {
+    Promise.all([getWatches(), getSettings()]).then(([watches, settings]) =>
+      sendResponse({ watches, settings })
+    );
+    return true;
+  }
+  if (message.type === "ADD_WATCH") {
+    getWatches().then((list) => {
+      const w = { id: newId(), active: true, created: new Date().toISOString(),
+                  lastChecked: null, notified: {}, ...message.watch };
+      return setWatches([...list, w]);
+    }).then((list) => sendResponse({ watches: list }));
+    return true;
+  }
+  if (message.type === "TOGGLE_WATCH") {
+    getWatches().then((list) =>
+      setWatches(list.map((w) => w.id === message.id ? { ...w, active: !w.active } : w))
+    ).then((list) => sendResponse({ watches: list }));
+    return true;
+  }
+  if (message.type === "DELETE_WATCH") {
+    getWatches().then((list) =>
+      setWatches(list.filter((w) => w.id !== message.id))
+    ).then((list) => sendResponse({ watches: list }));
+    return true;
+  }
+  if (message.type === "SAVE_SETTINGS") {
+    saveSettings(message.settings).then((settings) => sendResponse({ settings }));
     return true;
   }
   return false;
