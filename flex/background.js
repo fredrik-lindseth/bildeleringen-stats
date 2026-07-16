@@ -1,6 +1,8 @@
-import { browserAPI } from "./lib/browser-polyfill.js";
+import { browserAPI, storage } from "./lib/browser-polyfill.js";
 import { searchAvailability } from "./lib/search-api.js";
 import { getWatches, setWatches, getSettings, saveSettings } from "./lib/storage.js";
+import { detectHits, reconcile } from "./lib/watch.js";
+import { parseLocalISO } from "./lib/format.js";
 
 let currentAuth = null;
 
@@ -46,7 +48,14 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message.type === "SAVE_SETTINGS") {
-    saveSettings(message.settings).then((settings) => sendResponse({ settings }));
+    saveSettings(message.settings).then((settings) => {
+      ensureAlarm();
+      sendResponse({ settings });
+    });
+    return true;
+  }
+  if (message.type === "POLL_NOW") {
+    pollWatches().then((r) => { dispatchAll(r.results); sendResponse(r); });
     return true;
   }
   return false;
@@ -105,4 +114,71 @@ async function handleSearch({ point, start, end }) {
     }
     return { error: e.message };
   }
+}
+
+async function getToken() {
+  const { authToken } = await storage.get("authToken");
+  if (authToken && authToken.token) return authToken.token;
+  const auth = await getAuth(); // eksisterende pull (spør åpne dele.no-faner)
+  return auth ? auth.token : null;
+}
+
+async function pollWatches() {
+  const now = new Date();
+  const settings = await getSettings();
+  let watches = await getWatches();
+
+  // Utløp: marker watches der latestEnd er passert.
+  watches = watches.map((w) =>
+    parseLocalISO(w.latestEnd) <= now ? { ...w, active: false } : w);
+
+  const token = await getToken();
+  const results = [];
+  if (!token) {
+    await setWatches(watches);
+    console.log("[bg] pollWatches: ingen token, hopper over");
+    return { results, noAuth: true };
+  }
+
+  for (let i = 0; i < watches.length; i++) {
+    const w = watches[i];
+    if (!w.active || parseLocalISO(w.latestEnd) <= now) continue;
+    const start = new Date(Math.max(parseLocalISO(w.earliestStart).getTime(), now.getTime()));
+    const end = parseLocalISO(w.latestEnd);
+    let result;
+    try {
+      result = await searchAvailability(w.point, start, end, token);
+    } catch (e) {
+      if (e.message === "AUTH_EXPIRED") {
+        await storage.set({ authToken: null });
+        currentAuth = null;
+        console.log("[bg] pollWatches: 401, token tømt");
+        break;
+      }
+      console.warn("[bg] pollWatches søkefeil:", e.message);
+      continue;
+    }
+    const hits = detectHits(result, w, { start, end });
+    const rec = reconcile(hits, w.notified, now);
+    watches[i] = { ...w, notified: rec.notified, lastChecked: now.toISOString() };
+    results.push({ watchLabel: w.label, watch: watches[i], settings,
+                   browserHits: rec.browserHits, relayHits: rec.relayHits });
+  }
+  await setWatches(watches);
+  return { results, noAuth: false };
+}
+
+async function ensureAlarm() {
+  const { pollMinutes } = await getSettings();
+  browserAPI.alarms.create("watch-poll", { periodInMinutes: pollMinutes || 15 });
+}
+
+browserAPI.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "watch-poll") pollWatches().then((r) => dispatchAll(r.results));
+});
+ensureAlarm();
+
+// Stub — erstattes i T7 (dispatcher).
+function dispatchAll(results) {
+  console.log("[bg] dispatchAll", JSON.stringify(results.map((r) => ({ l: r.watchLabel, b: r.browserHits.length, relay: r.relayHits.length }))));
 }
