@@ -2,7 +2,7 @@ import { browserAPI, storage } from "./lib/browser-polyfill.js";
 import { searchAvailability } from "./lib/search-api.js";
 import { getWatches, setWatches, getSettings, saveSettings } from "./lib/storage.js";
 import { detectHits, reconcile } from "./lib/watch.js";
-import { parseLocalISO } from "./lib/format.js";
+import { parseLocalISO, toLocalISO } from "./lib/format.js";
 
 let currentAuth = null;
 
@@ -178,7 +178,65 @@ browserAPI.alarms.onAlarm.addListener((alarm) => {
 });
 ensureAlarm();
 
-// Stub — erstattes i T7 (dispatcher).
-function dispatchAll(results) {
-  console.log("[bg] dispatchAll", JSON.stringify(results.map((r) => ({ l: r.watchLabel, b: r.browserHits.length, relay: r.relayHits.length }))));
+function summaryText(watch, hits) {
+  if (hits.length === 1) {
+    const h = hits[0];
+    return `${h.model} ${h.carNumber} ledig ${Math.round(h.blockHours)} t ved ${h.location.name}`;
+  }
+  return `${hits.length} biler ledige ≥ ${watch.minHours} t ved ${watch.placeName}`;
+}
+
+function toPayloadHit(h) {
+  const start = toLocalISO(h.blockStart);
+  const end = toLocalISO(h.blockEnd);
+  return {
+    car: { model: h.model, number: h.carNumber, location: h.location.name, distanceM: h.location.distance },
+    free: { start, end, hours: Math.round(h.blockHours) },
+    // Tider urørt, ingen URL-enkoding (kolon-gotcha, se flex/AGENTS.md).
+    deepLink: `https://app.dele.no/findcar?start=${start}&end=${end}`,
+  };
+}
+
+async function relay(settings, watch, relayHits) {
+  const res = await fetch(`${settings.backendUrl}/api/notify`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${settings.backendToken}` },
+    body: JSON.stringify({
+      watchLabel: watch.label, place: watch.placeName,
+      hits: relayHits.map(toPayloadHit),
+    }),
+  });
+  if (!res.ok) throw new Error(`relay ${res.status}`);
+}
+
+async function dispatchAll(results) {
+  let watches = await getWatches();
+  for (const r of results) {
+    if (r.browserHits.length) {
+      browserAPI.notifications.create(`watch-${r.watch.id}-${Date.now()}`, {
+        type: "basic",
+        iconUrl: browserAPI.runtime.getURL("icons/icon-48.png"),
+        title: "Bildeleringen: bil ledig",
+        message: summaryText(r.watch, r.browserHits),
+      });
+    }
+    if (r.relayHits.length && r.settings.backendUrl && r.settings.backendToken) {
+      try {
+        await relay(r.settings, r.watch, r.relayHits);
+        // Merk relaykede nøkler relayed=true i den ferske lista.
+        watches = watches.map((w) => {
+          if (w.id !== r.watch.id) return w;
+          const notified = { ...w.notified };
+          for (const h of r.relayHits) {
+            const key = `${h.carId}|${toLocalISO(h.blockEnd)}`;
+            if (notified[key]) notified[key] = { ...notified[key], relayed: true };
+          }
+          return { ...w, notified };
+        });
+      } catch (e) {
+        console.warn("[bg] relay feilet, retry neste runde:", e.message);
+      }
+    }
+  }
+  await setWatches(watches);
 }
