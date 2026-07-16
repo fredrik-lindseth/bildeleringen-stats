@@ -10,6 +10,11 @@ function status(w) {
   return w.active ? "aktiv" : "av";
 }
 
+function fmtTime(iso) {
+  // lastChecked lagres som UTC (toISOString) → vis lokal veggklokke.
+  return new Date(iso).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+}
+
 async function render() {
   const { watches, settings } = await api.runtime.sendMessage({ type: "GET_WATCHES" });
   const ul = document.getElementById("watch-list");
@@ -23,7 +28,7 @@ async function render() {
     li.innerHTML =
       `<strong>${w.label}</strong> · ${status(w)}<br>` +
       `<span class="muted">${fmtWindow(w)} · minst ${w.minHours} t` +
-      (w.lastChecked ? ` · sjekket ${w.lastChecked.slice(11, 16)}` : " · ikke sjekket") + `</span> ` +
+      (w.lastChecked ? ` · sjekket ${fmtTime(w.lastChecked)}` : " · ikke sjekket") + `</span> ` +
       `<label><input type="checkbox" data-toggle="${w.id}" ${checked}> aktiv</label> ` +
       `<button data-del="${w.id}">Slett</button>`;
     ul.appendChild(li);
