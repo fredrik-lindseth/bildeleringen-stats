@@ -17,6 +17,7 @@ dele.no sitt søk er binært: oppgi eksakt fra/til, og bilen er enten ledig elle
 - **Fleksibel varighet**: "hele vinduet" eller "N timer et sted i vinduet".
 - **Filtre**: biltype og drivstoff som brikker, gangavstand. Kun Bildeleringen sine biler (ikke andre bilkollektiv på plattformen).
 - **Åpne i dele.no**: hopper rett til bookingen med tiden forhåndsutfylt (justert til den luken som faktisk passer).
+- **Varsler (overvåkning)**: følg med på et sted + filtre over et tidsvindu, få varsel når en bil blir ledig lenge nok (fellesferie-caset). Browser-varsel lokalt, og valgfritt relay til Signal via egen backend. Poller mens Firefox er åpen.
 
 ## Installasjon
 
@@ -28,7 +29,7 @@ Du må være innlogget på [app.dele.no](https://app.dele.no) i en fane, utvidel
 
 ## Personvern
 
-Ingen egne servere, ingen sporing. Eneste nettverkstrafikk er dele.no sitt eget søke-API (`/api/search`) med din eksisterende innlogging.
+Ingen sporing. Søket går mot dele.no sitt eget API (`/api/search`) med din eksisterende innlogging, og varsler poller det samme API-et i bakgrunnen. Skrur du på varsel-relay for varsler, sendes treff-oppsummeringer til en backend du selv konfigurerer (URL + token). Uten det: ingen egne servere.
 
 ## Begrensninger
 

@@ -29,13 +29,14 @@ Utvidelsen drives via `firefox-devtools`-MCP-en, som styrer en **egen, dedikert 
 
 ## Arkitektur
 
-- `content.js`: leser token fra `localStorage("persist:data")` på app.dele.no. Klassisk script.
-- `background.js`: `getAuth()` (content script først, `scripting.executeScript` som fallback), `SEARCH`-proxy mot `/api/search`. Nuller `currentAuth` ved `AUTH_EXPIRED`.
+- `content.js`: leser token fra `localStorage("persist:data")` på app.dele.no. Klassisk script. Pusher token til `storage.local` (`authToken`) ved hver sidelasting, så polleren har noe å gå på når ingen fane er åpen.
+- `background.js`: `getAuth()` (content script først, `scripting.executeScript` som fallback), `SEARCH`-proxy mot `/api/search`. Nuller `currentAuth` ved `AUTH_EXPIRED`. Eier også varsler: eneste skriver på `watches`, `alarms`-poller (`pollWatches`) og dispatcher (browser-varsel + relay-POST).
 - `lib/search-api.js`: `searchAvailability(point, start, end, token)`, `fetchLocations(token)`. 50ms delay + 429-backoff.
-- `lib/flex.js`: motoren, med `freeBlocks`, `fitCar`, `solve` (buckets whole/adjusted/siblings), `splitPairs`. Rene funksjoner.
+- `lib/flex.js`: motoren, med `freeBlocks`, `fitCar`, `solve` (buckets whole/adjusted/siblings), `splitPairs`. Rene funksjoner. `matchesFilters`/`withinDistance` er eksportert så `watch.js` gjenbruker dem.
+- `lib/watch.js`: rene `detectHits(searchResult, watch, window)` (bil ledig ≥ terskel i vinduet) + `reconcile(hits, notified, now)` (de-dup på blokkslutt, rydding, relay-retry). Ingen browser-API.
 - `lib/format.js`: `parseLocalISO`/`toLocalISO`, naiv lokal ISO uten tidssone.
-- `lib/storage.js`: lagrede steder (Eksempelveien = hjem) + favoritter.
-- `finder.html/js/css`: fullside-UI. `popup/`: inngang.
+- `lib/storage.js`: lagrede steder (Eksempelveien = hjem) + favoritter + overvåkninger (`getWatches`/`setWatches`) + varsel-innstillinger (`getSettings`/`saveSettings`).
+- `finder.html/js/css`: fullside-søk (med "Overvåk dette søket"). `watches.html/js`: overvåkninger + innstillinger. `popup/`: inngang til begge.
 
 ## API-fakta (`/api/search`)
 
@@ -53,6 +54,27 @@ Utvidelsen drives via `firefox-devtools`-MCP-en, som styrer en **egen, dedikert 
 - **"Skjul opptatte biler" i dele.no er ren klient-filtrering**, ikke URL-styrt. Kan ikke forhåndssettes via deep-link (verifisert i nettverksloggen).
 - **Ikke bruk `datetime-local`.** Den arver nettleser-locale (ga AM/PM + US-format). Vi bruker egen range-kalender + tid-selects, full kontroll, ingen locale-avhengighet.
 - **Auth krever en app.dele.no-fane** (tokenet bor i den origin-ens localStorage). Ved manglende innlogging åpner finder-en fanen ufokusert i bakgrunnen og poller til token er lest, så kjører søket på nytt.
+
+## Varsler (overvåkning)
+
+Overvåk et sted + filtre over et tidsvindu, varsle når en bil blir ledig en sammenhengende blokk ≥ terskel. Pollingen skjer i nettleseren (dele.no-token bor kun i nettleser-sesjonen), så det poller bare mens Firefox er åpen. Full design + plan i `../docs/superpowers/{specs,plans}/2026-07-16-varsler*`.
+
+**Flyt:** `alarms` (default 15 min) → `pollWatches` søker per aktiv watch → `detectHits` → `reconcile` → dispatcher fyrer ÉN browser-notifikasjon + ÉN POST til backend per watch. Backenden (`varsel.example.com`, eget repo) relayer til Signal.
+
+**Nye tillatelser:** `alarms`, `notifications`, host_permission `https://varsel.example.com/*`.
+
+**Nye storage-nøkler:**
+
+| Nøkkel | Struktur | Skriver |
+|---|---|---|
+| `watches` | Array av watch-objekter (id, point, filters, earliestStart, latestEnd, minHours, active, lastChecked, `notified`) | KUN background.js (UI sender ADD/TOGGLE/DELETE-meldinger) |
+| `authToken` | `{ token, ts }` | content.js (push), background nuller ved 401 |
+| `notifySettings` | `{ backendUrl, backendToken, pollMinutes }` | background (via SAVE_SETTINGS) |
+
+**Gotchas:**
+- **De-dup-nøkkel = `<carId>|<blokksluttISO>`, ikke blokkstart.** `freeBlocks` klipper blokkstart til vindusstart, og vindusstart = `max(earliestStart, nå)`. Etter at vinduet har begynt drifter blokkstart for hver poll → nytt varsel hvert kvarter. Blokkslutt er stabil.
+- **Relay-feil dropper ikke varselet.** `notified`-verdien er `{ notifiedAt, relayed }`. Mislykket POST står `relayed: false` og retryes neste runde uten nytt browser-varsel. Relayen er den kritiske stien (du er borte fra laptopen).
+- **`detectHits` får det effektive vinduet eksplisitt** (samme som søket), leser aldri `watch.earliestStart` selv.
 
 ## Design
 
