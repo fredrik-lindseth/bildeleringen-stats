@@ -113,7 +113,7 @@ function carFuels(car) {
     .map((p) => p.carPropertyName);
 }
 
-function matchesFilters(car, filters = {}) {
+export function matchesFilters(car, filters = {}) {
   if (filters.organizationId && car.organizationId !== filters.organizationId) return false;
   if (filters.category && car.carCategory !== filters.category) return false;
   if (filters.categories && filters.categories.length && !filters.categories.includes(car.carCategory)) return false;
@@ -124,7 +124,7 @@ function matchesFilters(car, filters = {}) {
   return true;
 }
 
-function withinDistance(car, filters = {}) {
+export function withinDistance(car, filters = {}) {
   if (!filters.maxDistanceM) return true;
   const d = car.location?.distance;
   return d == null ? false : d <= filters.maxDistanceM;
