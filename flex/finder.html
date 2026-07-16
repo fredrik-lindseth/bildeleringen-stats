@@ -87,6 +87,13 @@
       <div class="wish__foot">
         <button type="submit" class="submit">Søk</button>
       </div>
+
+      <div class="watch-create">
+        <label for="watch-minhours">Varsle når ledig minst</label>
+        <input id="watch-minhours" type="number" min="1" step="1" value="24" aria-label="Minste sammenhengende timer" /> t
+        <button id="watch-save" type="button">Overvåk dette søket</button>
+        <p id="watch-msg" class="watch-msg" role="status"></p>
+      </div>
     </form>
 
     <section id="results" class="results" aria-live="polite">

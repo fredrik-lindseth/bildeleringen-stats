@@ -89,6 +89,35 @@ async function init() {
 
   wireDurationToggle();
   document.getElementById("wish").addEventListener("submit", onSearch);
+  document.getElementById("watch-save").addEventListener("click", onWatchSave);
+}
+
+async function onWatchSave() {
+  const msg = document.getElementById("watch-msg");
+  const wish = readWish();                                // earliestStart/latestEnd er Date
+  const placeName = document.getElementById("place").selectedOptions[0]?.text || "Sted";
+  const minHours = Number(document.getElementById("watch-minhours").value);
+  const windowHours = (wish.latestEnd - wish.earliestStart) / 3600000; // Date-diff i ms
+  if (wish.latestEnd <= wish.earliestStart) { setMsg(msg, "Sluttidspunktet må være etter starten.", "err"); return; }
+  if (!minHours || minHours <= 0) { setMsg(msg, "Sett et positivt timetall.", "err"); return; }
+  if (minHours > windowHours) {
+    setMsg(msg, `Terskelen (${minHours} t) er større enn vinduet (${Math.floor(windowHours)} t). Da kan varselet aldri fyre.`, "err");
+    return;
+  }
+  await api.runtime.sendMessage({ type: "ADD_WATCH", watch: {
+    label: `${placeName}, ${minHours} t`,
+    point: wish.point, placeName,
+    filters: wish.filters,
+    earliestStart: toLocalISO(wish.earliestStart),
+    latestEnd: toLocalISO(wish.latestEnd),
+    minHours,
+  }});
+  setMsg(msg, "Overvåkning lagret. Se «Mine overvåkninger».", "ok");
+}
+
+function setMsg(el, text, cls) {
+  el.textContent = text;
+  el.className = `watch-msg ${cls}`;
 }
 
 const atMidnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());

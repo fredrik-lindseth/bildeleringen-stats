@@ -34,6 +34,8 @@
   --shadow-card: 0 1px 3px rgba(20, 23, 33, 0.05), 0 0 0 1px var(--color-border);
   --shadow-pop: 0 8px 24px rgba(20, 23, 33, 0.10), 0 0 0 1px var(--color-border);
   --focus-ring: 0 0 0 3px var(--color-accent-light);
+  --color-success: #1a7f37;
+  --color-error: #b3261e;
 
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
@@ -54,6 +56,8 @@
     --color-accent-hover: #c9b2f2;
     --color-accent-light: rgba(183, 154, 236, 0.16);
     --color-accent-text: #16131c;
+    --color-success: #4ade80;
+    --color-error: #f2b8b5;
 
     --color-available: #5fc98d;
     --color-available-bg: rgba(95, 201, 141, 0.14);
@@ -540,3 +544,9 @@ body {
   * { transition: none !important; }
   .car:hover { transform: none; }
 }
+
+.watch-create { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.watch-create input[type="number"] { width: 4rem; }
+.watch-msg { flex-basis: 100%; margin: 4px 0 0; font-size: 0.85rem; color: var(--color-text-secondary); }
+.watch-msg.ok { color: var(--color-success); }
+.watch-msg.err { color: var(--color-error); }
