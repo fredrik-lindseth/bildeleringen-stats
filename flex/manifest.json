@@ -3,8 +3,8 @@
   "name": "Bildeleringen Fleksibel",
   "version": "0.1.0",
   "description": "Fleksibelt booking-søk for dele.no: finn når en bil faktisk er ledig",
-  "permissions": ["storage", "scripting"],
-  "host_permissions": ["*://app.dele.no/*"],
+  "permissions": ["storage", "scripting", "alarms", "notifications"],
+  "host_permissions": ["*://app.dele.no/*", "https://varsel.example.com/*"],
   "background": {
     "scripts": ["background.js"],
     "service_worker": "background.js",
