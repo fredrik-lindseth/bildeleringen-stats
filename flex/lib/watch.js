@@ -27,3 +27,35 @@ export function detectHits(searchResult, watch, window) {
   }
   return hits;
 }
+
+function hitKey(hit) {
+  return `${hit.carId}|${toLocalISO(hit.blockEnd)}`;
+}
+
+// Ren de-dup + rydding + relay-retry. Nøkkel på blokkslutt (stabil på tvers av
+// polls, i motsetning til blokkstart som klippes til det bevegelige vindusstart).
+// notified inn er watchens hovedbok; now er en Date.
+export function reconcile(hits, notified, now) {
+  const prev = notified || {};
+  const next = {};
+  // Behold eksisterende nøkler som ikke er passert.
+  for (const [key, entry] of Object.entries(prev)) {
+    const endISO = key.slice(key.indexOf("|") + 1);
+    if (parseLocalISO(endISO) > now) next[key] = entry;
+  }
+  const browserHits = [];
+  const relayHits = [];
+  for (const hit of hits) {
+    const key = hitKey(hit);
+    const existing = prev[key];
+    if (!existing) {
+      browserHits.push(hit);
+      relayHits.push(hit);
+      next[key] = { notifiedAt: toLocalISO(now), relayed: false };
+    } else {
+      if (existing.relayed === false) relayHits.push(hit);
+      next[key] = existing; // bevar relayed-status
+    }
+  }
+  return { browserHits, relayHits, notified: next };
+}

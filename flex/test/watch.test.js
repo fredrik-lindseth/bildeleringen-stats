@@ -1,7 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { detectHits } from "../lib/watch.js";
+import { detectHits, reconcile } from "../lib/watch.js";
 import { ORG_BILDELERINGEN } from "../lib/flex.js";
+
+function parseEnd(s) {
+  const [d, t] = s.split("T");
+  const [y, mo, da] = d.split("-").map(Number);
+  const [h, mi, se] = t.split(":").map(Number);
+  return new Date(y, mo - 1, da, h, mi, se || 0);
+}
+function hit(carId, endLocalISO) {
+  return { carId, carNumber: "#1", model: "Yaris", category: "Småbil",
+           location: { name: "L", distance: 10 },
+           blockStart: new Date(2026, 6, 20, 9),
+           blockEnd: parseEnd(endLocalISO),
+           blockHours: 100 };
+}
 
 function car(over = {}) {
   return {
@@ -42,4 +56,43 @@ test("detectHits gir ett treff per ledig blokk", () => {
   ]});
   const hits = detectHits({ cars: [toblokk] }, watch({ minHours: 24 }), WIN);
   assert.equal(hits.length, 2);
+});
+
+test("reconcile: nytt treff gir browserHit + relayHit + oppføring", () => {
+  const h = hit("c1", "2026-07-24T17:00:00");
+  const r = reconcile([h], {}, new Date(2026, 6, 20, 10));
+  assert.equal(r.browserHits.length, 1);
+  assert.equal(r.relayHits.length, 1);
+  assert.equal(r.notified["c1|2026-07-24T17:00:00"].relayed, false);
+});
+
+test("reconcile: samme blokk over to polls (etter vindusstart) gir ETT browser-varsel", () => {
+  const h = hit("c1", "2026-07-24T17:00:00");
+  const r1 = reconcile([h], {}, new Date(2026, 6, 20, 10));
+  r1.notified["c1|2026-07-24T17:00:00"].relayed = true; // som om POST lyktes
+  const r2 = reconcile([h], r1.notified, new Date(2026, 6, 20, 10, 15));
+  assert.equal(r2.browserHits.length, 0);
+  assert.equal(r2.relayHits.length, 0);
+});
+
+test("reconcile: relayed=false gir relayHit men ikke browserHit neste runde", () => {
+  const h = hit("c1", "2026-07-24T17:00:00");
+  const r1 = reconcile([h], {}, new Date(2026, 6, 20, 10));
+  const r2 = reconcile([h], r1.notified, new Date(2026, 6, 20, 10, 15)); // POST feilet: relayed står false
+  assert.equal(r2.browserHits.length, 0);
+  assert.equal(r2.relayHits.length, 1);
+});
+
+test("reconcile: passert blokkslutt ryddes bort", () => {
+  const notified = { "c1|2026-07-20T09:00:00": { notifiedAt: "x", relayed: true } };
+  const r = reconcile([], notified, new Date(2026, 6, 20, 10));
+  assert.deepEqual(r.notified, {});
+});
+
+test("reconcile: forlenget blokk (senere slutt) gir nytt varsel", () => {
+  const notified = { "c1|2026-07-24T17:00:00": { notifiedAt: "x", relayed: true } };
+  const lengre = hit("c1", "2026-07-26T17:00:00");
+  const r = reconcile([lengre], notified, new Date(2026, 6, 20, 10));
+  assert.equal(r.browserHits.length, 1);
+  assert.ok(r.notified["c1|2026-07-26T17:00:00"]);
 });
