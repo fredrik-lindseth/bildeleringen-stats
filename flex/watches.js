@@ -1,7 +1,14 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 
+function fmtDT(iso) {
+  // naiv lokal ISO uten Z → new Date tolker som lokal veggklokke.
+  return new Date(iso).toLocaleString("nb-NO", {
+    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+}
+
 function fmtWindow(w) {
-  return `${w.earliestStart.slice(0, 16).replace("T", " ")} – ${w.latestEnd.slice(0, 16).replace("T", " ")}`;
+  return `${fmtDT(w.earliestStart)} – ${fmtDT(w.latestEnd)}`;
 }
 
 function status(w) {
