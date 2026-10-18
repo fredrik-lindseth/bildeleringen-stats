@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Bildeleringen Fleksibel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Fleksibelt booking-søk for dele.no: finn når en bil faktisk er ledig",
   "permissions": ["storage", "scripting", "alarms", "notifications"],
-  "host_permissions": ["*://app.dele.no/*", "https://varsel.example.com/*"],
+  "host_permissions": ["*://app.dele.no/*"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
   "background": {
     "scripts": ["background.js"],
     "service_worker": "background.js",
@@ -17,6 +18,10 @@
       "run_at": "document_idle"
     }
   ],
+  "options_ui": {
+    "page": "watches.html",
+    "open_in_tab": true
+  },
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
@@ -33,7 +38,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "bildeleringen-flex@extension",
-      "strict_min_version": "112.0"
+      "strict_min_version": "128.0"
     }
   }
 }

@@ -1,4 +1,15 @@
+import { parseBackendUrl, originPatternFor } from "./lib/relay.js";
+
 const api = typeof browser !== "undefined" ? browser : chrome;
+
+// Adressen som er lagret nå, så en gammel tilgang kan trekkes tilbake ved bytte.
+let savedBackendUrl = "";
+
+function showMsg(text, isError = false) {
+  const el = document.getElementById("set-msg");
+  el.textContent = text;
+  el.classList.toggle("err", isError);
+}
 
 function fmtDT(iso) {
   // naiv lokal ISO uten Z → new Date tolker som lokal veggklokke.
@@ -43,6 +54,13 @@ async function render() {
   document.getElementById("set-url").value = settings.backendUrl || "";
   document.getElementById("set-token").value = settings.backendToken || "";
   document.getElementById("set-poll").value = settings.pollMinutes || 15;
+  savedBackendUrl = settings.backendUrl || "";
+
+  // En reinstallert utvidelse kan ha adressen i storage, men ha mistet tilgangen.
+  const pattern = originPatternFor(savedBackendUrl);
+  if (pattern && !(await api.permissions.contains({ origins: [pattern] }))) {
+    showMsg("Utvidelsen mangler tilgang til backend-URL-en. Trykk Lagre for å gi den.", true);
+  }
 }
 
 document.addEventListener("click", async (e) => {
@@ -56,13 +74,37 @@ document.addEventListener("change", async (e) => {
   if (t) { await api.runtime.sendMessage({ type: "TOGGLE_WATCH", id: t.dataset.toggle }); render(); }
 });
 
-document.getElementById("set-save").addEventListener("click", async () => {
-  await api.runtime.sendMessage({ type: "SAVE_SETTINGS", settings: {
-    backendUrl: document.getElementById("set-url").value.trim().replace(/\/$/, ""),
-    backendToken: document.getElementById("set-token").value.trim(),
-    pollMinutes: Number(document.getElementById("set-poll").value) || 15,
-  }});
-  document.getElementById("set-msg").textContent = "Lagret.";
+document.getElementById("set-save").addEventListener("click", () => {
+  let backend;
+  try {
+    backend = parseBackendUrl(document.getElementById("set-url").value);
+  } catch (err) {
+    showMsg(err.message, true);
+    return;
+  }
+  // Firefox godtar bare permissions.request direkte fra brukerhandlingen, så
+  // kallet må skje før første await i håndteren.
+  const granted = backend.originPattern
+    ? api.permissions.request({ origins: [backend.originPattern] })
+    : Promise.resolve(true);
+  granted.then(async (ok) => {
+    if (!ok) {
+      showMsg("Tilgang til backend-URL-en ble ikke gitt. Innstillingene er ikke lagret.", true);
+      return;
+    }
+    const oldPattern = originPatternFor(savedBackendUrl);
+    await api.runtime.sendMessage({ type: "SAVE_SETTINGS", settings: {
+      backendUrl: backend.url,
+      backendToken: document.getElementById("set-token").value.trim(),
+      pollMinutes: Number(document.getElementById("set-poll").value) || 15,
+    }});
+    if (oldPattern && oldPattern !== backend.originPattern) {
+      await api.permissions.remove({ origins: [oldPattern] });
+    }
+    savedBackendUrl = backend.url;
+    document.getElementById("set-url").value = backend.url;
+    showMsg("Lagret.");
+  }).catch((err) => showMsg(`Kunne ikke lagre: ${err.message}`, true));
 });
 
 render();

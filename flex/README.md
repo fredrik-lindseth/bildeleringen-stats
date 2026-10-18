@@ -27,6 +27,8 @@ dele.no sitt søk er binært: oppgi eksakt fra/til, og bilen er enten ledig elle
 
 Du må være innlogget på [app.dele.no](https://app.dele.no) i en fane, utvidelsen bruker den innloggingen. Er du ikke det, åpner den fanen for deg og prøver på nytt.
 
+**Relay for varsler (valgfritt):** åpne «Mine overvåkninger» fra popupen (eller Innstillinger under utvidelsen i `about:addons`), fyll inn backend-URL og abonnent-token, og trykk Lagre. Nettleseren spør da om tilgang til akkurat den adressen. Adressen lagres lokalt i nettleseren og overlever «Reload» i `about:debugging`. Krever Firefox 128 eller nyere.
+
 ## Personvern
 
 Ingen sporing. Søket går mot dele.no sitt eget API (`/api/search`) med din eksisterende innlogging, og varsler poller det samme API-et i bakgrunnen. Skrur du på varsel-relay for varsler, sendes treff-oppsummeringer til en backend du selv konfigurerer (URL + token). Uten det: ingen egne servere.

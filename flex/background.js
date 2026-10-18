@@ -3,6 +3,7 @@ import { searchAvailability } from "./lib/search-api.js";
 import { getWatches, setWatches, getSettings, saveSettings } from "./lib/storage.js";
 import { detectHits, reconcile } from "./lib/watch.js";
 import { parseLocalISO, toLocalISO } from "./lib/format.js";
+import { originPatternFor } from "./lib/relay.js";
 
 let currentAuth = null;
 
@@ -198,6 +199,12 @@ function toPayloadHit(h) {
 }
 
 async function relay(settings, watch, relayHits) {
+  // Uten innvilget tilgang ville fetch-en feilet på CORS. Kast, så treffet
+  // står som ikke relayet og prøves igjen når tilgangen er gitt.
+  const pattern = originPatternFor(settings.backendUrl);
+  if (!pattern || !(await browserAPI.permissions.contains({ origins: [pattern] }))) {
+    throw new Error("mangler tilgang til backend-URL, gi den på innstillingssiden");
+  }
   const res = await fetch(`${settings.backendUrl}/api/notify`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${settings.backendToken}` },
