@@ -63,7 +63,7 @@ Overvåk et sted + filtre over et tidsvindu, varsle når en bil blir ledig en sa
 
 **Tillatelser:** `alarms`, `notifications`, og relay-verten som valgfri tillatelse (`optional_host_permissions`).
 
-**Relay-adressen står aldri i koden.** Den settes på innstillingssiden (`watches.html`, også `options_ui`, så den nås fra `about:addons`), lagres i `notifySettings.backendUrl` og gis tilgang ved kjøretid med `permissions.request` for akkurat den verten. `lib/relay.js` vasker adressen (https, eller http mot localhost) og lager match-mønsteret. Lagre-knappen må kalle `permissions.request` før første `await`, ellers avviser Firefox kallet fordi det ikke lenger regnes som brukerhandling. Mangler tilgangen, kaster `relay()` og treffet står `relayed: false` til den er gitt. Bytter du adresse, trekkes tilgangen til den gamle verten tilbake.
+**Relay-adressen står aldri i koden.** Den settes på innstillingssiden (`watches.html`, også `options_ui`, så den nås fra `about:addons`), lagres i `notifySettings.backendUrl` og gis tilgang ved kjøretid med `permissions.request` for akkurat den verten. `lib/relay.js` vasker adressen (https, eller http mot localhost) og lager match-mønsteret. Lagre-knappen må kalle `permissions.request` før første `await`, ellers avviser Firefox kallet fordi det ikke lenger regnes som brukerhandling. Mangler tilgangen, kaster `relay()`, og treffet blir stående med `relayed: false` til tilgangen er gitt. Bytter du adresse, trekkes tilgangen til den gamle verten tilbake.
 
 **Nye storage-nøkler:**
 

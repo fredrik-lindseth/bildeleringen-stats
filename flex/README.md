@@ -27,7 +27,7 @@ dele.no sitt søk er binært: oppgi eksakt fra/til, og bilen er enten ledig elle
 
 Du må være innlogget på [app.dele.no](https://app.dele.no) i en fane, utvidelsen bruker den innloggingen. Er du ikke det, åpner den fanen for deg og prøver på nytt.
 
-**Relay for varsler (valgfritt):** åpne «Mine overvåkninger» fra popupen (eller Innstillinger under utvidelsen i `about:addons`), fyll inn backend-URL og abonnent-token, og trykk Lagre. Nettleseren spør da om tilgang til akkurat den adressen. Adressen lagres lokalt i nettleseren og overlever «Reload» i `about:debugging`. Krever Firefox 128 eller nyere.
+Vil du ha varslene videre gjennom en relay, åpner du «Mine overvåkninger» fra popupen (eller Innstillinger under utvidelsen i `about:addons`), fyller inn backend-URL og abonnent-token og trykker Lagre. Nettleseren spør da om tilgang til akkurat den adressen. Adressen lagres lokalt i nettleseren og overlever «Reload» i `about:debugging`. Relay er valgfritt og krever Firefox 128 eller nyere.
 
 ## Personvern
 
